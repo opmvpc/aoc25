@@ -1,0 +1,30 @@
+{
+  "name": "aoc25-battle-royale",
+  "version": "1.0.0",
+  "description": "🏆 Advent of Code 2025 Battle Royale - Claude vs Codex vs Gemini",
+  "type": "module",
+  "private": true,
+  "workspaces": [
+    "core/runner",
+    "core/dashboard",
+    "core/db"
+  ],
+  "scripts": {
+    "scaffold": "tsx scripts/scaffold.ts",
+    "init-db": "tsx scripts/init-db.ts",
+    "init-db:reset": "tsx scripts/init-db.ts --reset",
+    "publish-day": "tsx scripts/publish-day.ts",
+    "sync-tools": "tsx scripts/sync-tools.ts",
+    "setup": "npm run scaffold && npm install && npm run sync-tools && npm run init-db && npm run publish-day -- 0",
+    "dev": "npm run dev -w core/dashboard",
+    "build": "npm run build -w core/runner && npm run build -w core/dashboard"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

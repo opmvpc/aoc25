@@ -1,0 +1,4 @@
+#!/bin/bash
+# AoC 2025 Runner Wrapper
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/.." && npx tsx "$SCRIPT_DIR/runner/dist/cli.js" "$@"
