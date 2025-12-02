@@ -1,0 +1,349 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+/* 🎄 AoC 2025 Battle Royale - Glassmorphism Design */
+
+@theme {
+  /* Primary palette - Deep space Christmas */
+  --color-primary-50: #fefce8;
+  --color-primary-100: #fef9c3;
+  --color-primary-200: #fef08a;
+  --color-primary-300: #fde047;
+  --color-primary-400: #facc15;
+  --color-primary-500: #eab308;
+  --color-primary-600: #ca8a04;
+  --color-primary-700: #a16207;
+  --color-primary-800: #854d0e;
+  --color-primary-900: #713f12;
+  --color-primary-950: #422006;
+  
+  /* AoC Brand Colors */
+  --color-aoc-gold: #ffcc00;
+  --color-aoc-silver: #9999cc;
+  --color-aoc-green: #00cc00;
+  --color-aoc-red: #ff6b6b;
+  --color-aoc-blue: #0099ff;
+
+  /* Agent signature colors */
+  --color-claude: #f97316;
+  --color-codex: #22c55e;
+  --color-gemini: #a855f7;
+
+  /* Glassmorphism backgrounds */
+  --color-glass-dark: rgba(15, 15, 35, 0.8);
+  --color-glass-light: rgba(255, 255, 255, 0.05);
+  --color-glass-border: rgba(255, 255, 255, 0.1);
+  
+  /* Backgrounds */
+  --color-bg-dark: #0a0a1a;
+  --color-bg-card: rgba(16, 16, 26, 0.9);
+  --color-bg-hover: rgba(30, 30, 60, 0.6);
+
+  /* Fonts */
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+}
+
+/* Base styles with gradient background */
+body {
+  background: linear-gradient(135deg, #0a0a1a 0%, #1a0a2e 50%, #0a1a2e 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  font-family: var(--font-sans);
+}
+
+/* Animated stars background */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, #fff, transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(255,204,0,0.8), transparent),
+    radial-gradient(1px 1px at 90px 40px, #fff, transparent),
+    radial-gradient(2px 2px at 160px 120px, rgba(153,153,204,0.8), transparent),
+    radial-gradient(1px 1px at 230px 80px, #fff, transparent),
+    radial-gradient(2px 2px at 300px 150px, rgba(0,204,0,0.6), transparent);
+  background-size: 350px 200px;
+  animation: stars 150s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.5;
+}
+
+@keyframes stars {
+  from { transform: translateY(0); }
+  to { transform: translateY(-200px); }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--color-aoc-gold), var(--color-aoc-green));
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #ffdd44, #00ff00);
+}
+
+/* Glassmorphism card */
+.glass {
+  background: rgba(16, 16, 32, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.glass-subtle {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+/* Agent cards with gradient borders */
+.agent-card-claude {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(249, 115, 22, 0.02));
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  position: relative;
+}
+.agent-card-claude::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 18px;
+  padding: 2px;
+  background: linear-gradient(135deg, var(--color-claude), transparent 60%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.agent-card-codex {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.02));
+  border: 2px solid transparent;
+  position: relative;
+}
+.agent-card-codex::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 18px;
+  padding: 2px;
+  background: linear-gradient(135deg, var(--color-codex), transparent 60%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+.agent-card-gemini {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(168, 85, 247, 0.02));
+  border: 2px solid transparent;
+  position: relative;
+}
+.agent-card-gemini::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 18px;
+  padding: 2px;
+  background: linear-gradient(135deg, var(--color-gemini), transparent 60%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+
+/* Agent badges */
+.agent-claude {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.3), rgba(249, 115, 22, 0.1));
+  border: 1px solid var(--color-claude);
+  color: var(--color-claude);
+  text-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
+}
+
+.agent-codex {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(34, 197, 94, 0.1));
+  border: 1px solid var(--color-codex);
+  color: var(--color-codex);
+  text-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+}
+
+.agent-gemini {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(168, 85, 247, 0.1));
+  border: 1px solid var(--color-gemini);
+  color: var(--color-gemini);
+  text-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+}
+
+/* Podium styles */
+.podium-1 {
+  background: linear-gradient(135deg, rgba(255, 204, 0, 0.2), rgba(255, 204, 0, 0.05));
+  border: 2px solid var(--color-aoc-gold);
+  box-shadow: 
+    0 0 30px rgba(255, 204, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.podium-2 {
+  background: linear-gradient(135deg, rgba(192, 192, 192, 0.15), rgba(192, 192, 192, 0.03));
+  border: 2px solid #c0c0c0;
+  box-shadow: 0 0 20px rgba(192, 192, 192, 0.2);
+}
+
+.podium-3 {
+  background: linear-gradient(135deg, rgba(205, 127, 50, 0.15), rgba(205, 127, 50, 0.03));
+  border: 2px solid #cd7f32;
+  box-shadow: 0 0 20px rgba(205, 127, 50, 0.2);
+}
+
+/* Time display - BIG and prominent */
+.time-display {
+  font-family: var(--font-mono);
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(180deg, #fff, #ccc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.time-display-gold {
+  background: linear-gradient(180deg, #ffdd00, #ffaa00);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 0 30px rgba(255, 204, 0, 0.5);
+  filter: drop-shadow(0 0 10px rgba(255, 204, 0, 0.3));
+}
+
+.time-small {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.time-winner {
+  color: var(--color-aoc-gold);
+  text-shadow: 0 0 15px rgba(255, 204, 0, 0.6);
+}
+
+/* Stars */
+.star-gold {
+  color: var(--color-aoc-gold);
+  text-shadow: 0 0 10px var(--color-aoc-gold);
+  filter: drop-shadow(0 0 5px rgba(255, 204, 0, 0.5));
+}
+
+.star-silver {
+  color: var(--color-aoc-silver);
+  text-shadow: 0 0 10px var(--color-aoc-silver);
+}
+
+/* Glowing buttons */
+.btn-glow {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.btn-glow::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: 0.5s;
+}
+
+.btn-glow:hover::before {
+  left: 100%;
+}
+
+/* Pulse animation */
+@keyframes pulse-glow {
+  0%, 100% { 
+    box-shadow: 0 0 5px currentColor;
+    opacity: 1;
+  }
+  50% { 
+    box-shadow: 0 0 25px currentColor;
+    opacity: 0.8;
+  }
+}
+
+.pulse-running {
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+/* Winner highlight */
+@keyframes winner-glow {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(255, 204, 0, 0.4);
+  }
+  50% { 
+    box-shadow: 0 0 40px rgba(255, 204, 0, 0.6);
+  }
+}
+
+.winner-highlight {
+  animation: winner-glow 2s ease-in-out infinite;
+}
+
+/* Racing animation */
+@keyframes race-flag {
+  0% { transform: rotate(0deg); }
+  25% { transform: rotate(5deg); }
+  75% { transform: rotate(-5deg); }
+  100% { transform: rotate(0deg); }
+}
+
+.race-flag {
+  animation: race-flag 0.5s ease-in-out infinite;
+}
+
+/* Table hover effect */
+.table-row-hover {
+  transition: all 0.2s ease;
+}
+
+.table-row-hover:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateX(4px);
+}
+
+/* Rank indicators */
+.rank-1 { color: #ffd700; }
+.rank-2 { color: #c0c0c0; }
+.rank-3 { color: #cd7f32; }
+
+/* Status colors */
+.status-success { color: var(--color-aoc-green); }
+.status-error { color: var(--color-aoc-red); }
+.status-pending { color: var(--color-aoc-silver); }
+.status-none { color: rgba(255, 255, 255, 0.2); }

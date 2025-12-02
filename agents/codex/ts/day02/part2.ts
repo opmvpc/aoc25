@@ -41,6 +41,17 @@ export const solver: ISolver = {
         i++;
     }
 
+    // Merge ranges to accelerate membership checks
+    ranges.sort((a, b) => a[0] - b[0]);
+    const merged: Array<[number, number]> = [];
+    for (const [l, r] of ranges) {
+      if (!merged.length || l > merged[merged.length - 1]![1] + 1) {
+        merged.push([l, r]);
+      } else {
+        if (r > merged[merged.length - 1]![1]) merged[merged.length - 1]![1] = r;
+      }
+    }
+
     // Precompute powers of 10 up to max digits
     let digitsMax = 0;
     for (let x = maxR; x > 0; x = Math.trunc(x / 10)) digitsMax++;
@@ -49,51 +60,54 @@ export const solver: ISolver = {
     const pow10: number[] = [1];
     for (let i = 1; i <= digitsMax; i++) pow10.push(pow10[i - 1]! * 10);
 
-    // Generate all invalid numbers up to maxR (dedup)
-    const nums: number[] = [];
-    for (let m = 1; m * 2 <= digitsMax; m++) {
-      const baseMin = pow10[m - 1]!;
-      const baseMax = pow10[m]! - 1;
-      const denom = pow10[m]! - 1;
-      for (let r = 2; m * r <= digitsMax; r++) {
-        const k = (pow10[m * r]! - 1) / denom; // 111... pattern (r times)
-        let xHi = Math.floor(maxR / k);
-        if (xHi > baseMax) xHi = baseMax;
-        if (xHi < baseMin) continue;
-        for (let x = baseMin; x <= xHi; x++) {
-          nums.push(x * k);
+    // Proper divisors for primitive check
+    const divs: number[][] = Array.from({ length: digitsMax + 1 }, () => []);
+    const mults: number[][] = Array.from({ length: digitsMax + 1 }, () => []);
+    for (let m = 1; m <= digitsMax; m++) {
+      for (let d = 1; d * 2 <= m; d++) {
+        if (m % d === 0) {
+          divs[m]!.push(d);
+          mults[m]!.push((pow10[m]! - 1) / (pow10[d]! - 1));
         }
       }
     }
 
-    nums.sort((a, b) => a - b);
-    const uniq: number[] = [];
-    for (const v of nums) {
-      if (uniq.length === 0 || uniq[uniq.length - 1] !== v) uniq.push(v);
-    }
-
-    const pref: number[] = new Array(uniq.length + 1);
-    pref[0] = 0;
-    for (let i = 0; i < uniq.length; i++) {
-      pref[i + 1] = pref[i]! + uniq[i]!;
-    }
-
-    const lowerBound = (arr: number[], target: number) => {
-      let l = 0,
-        r = arr.length;
-      while (l < r) {
-        const m = (l + r) >> 1;
-        if (arr[m]! < target) l = m + 1;
-        else r = m;
-      }
-      return l;
-    };
-
+    const mergedLen = merged.length;
     let total = 0;
-    for (const [L, R] of ranges) {
-      const i1 = lowerBound(uniq, L);
-      const i2 = lowerBound(uniq, R + 1);
-      if (i1 < i2) total += pref[i2]! - pref[i1]!;
+
+    for (let m = 1; m <= digitsMax; m++) {
+      const baseMin = pow10[m - 1]!;
+      const baseMax = pow10[m]! - 1;
+      if (baseMin > baseMax) continue;
+      const divList = divs[m]!;
+      const mulList = mults[m]!;
+
+      for (let r = 2; m * r <= digitsMax; r++) {
+        const k = (pow10[m * r]! - 1) / (pow10[m]! - 1); // 111... repeated r times
+        let xHi = Math.floor(maxR / k);
+        if (xHi > baseMax) xHi = baseMax;
+        if (xHi < baseMin) continue;
+
+        let idx = 0;
+        for (let x = baseMin; x <= xHi; x++) {
+          // Primitive check: ensure base isn't itself a repetition
+          let primitive = true;
+          for (let i = 0; i < divList.length; i++) {
+            const d = divList[i]!;
+            const rep = Math.trunc(x / pow10[m - d]!);
+            if (rep * mulList[i]! === x) {
+              primitive = false;
+              break;
+            }
+          }
+          if (!primitive) continue;
+
+          const val = x * k;
+          while (idx < mergedLen && val > merged[idx]![1]) idx++;
+          if (idx >= mergedLen) break;
+          if (val >= merged[idx]![0]) total += val;
+        }
+      }
     }
 
     return String(total);

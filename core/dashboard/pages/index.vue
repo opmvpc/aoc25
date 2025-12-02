@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import type { DayWithRuns, Agent, Language } from "~/types";
 
-const { data: days, pending, error, refresh } = await useFetch<DayWithRuns[]>("/api/days");
+const {
+  data: days,
+  pending,
+  error,
+  refresh,
+} = await useFetch<DayWithRuns[]>("/api/days");
 
 const agents: Agent[] = ["claude", "codex", "gemini"];
 const languages: Language[] = ["ts", "c"];
@@ -29,28 +34,31 @@ const currentResults = ref<{
 // Pre-compute status grid with raw time in ms
 const statusGrid = computed(() => {
   if (!days.value) return new Map();
-  
-  const grid = new Map<string, { 
-    status: string; 
-    timeMs: number | null;
-    timeFormatted: string | null;
-    answer: string | null;
-    isCorrect: boolean | null;
-  }>();
-  
+
+  const grid = new Map<
+    string,
+    {
+      status: string;
+      timeMs: number | null;
+      timeFormatted: string | null;
+      answer: string | null;
+      isCorrect: boolean | null;
+    }
+  >();
+
   for (const day of days.value) {
     for (const agent of agents) {
       for (const lang of languages) {
         for (const part of [1, 2] as const) {
           const key = `${day.id}-${agent}-${lang}-${part}`;
           const run = day.latestRuns?.[agent]?.[lang]?.[`part${part}`];
-          
+
           let status = "none";
           let timeMs: number | null = null;
           let timeFormatted: string | null = null;
           let answer: string | null = null;
           let isCorrect: boolean | null = null;
-          
+
           if (run) {
             isCorrect = run.is_correct;
             answer = run.answer ?? null;
@@ -58,45 +66,70 @@ const statusGrid = computed(() => {
             if (run.is_correct === true) status = "success";
             else if (run.is_correct === false) status = "error";
             else status = "pending";
-            
+
             if (timeMs < 1) timeFormatted = `${(timeMs * 1000).toFixed(0)}µs`;
             else if (timeMs < 1000) timeFormatted = `${timeMs.toFixed(1)}ms`;
             else timeFormatted = `${(timeMs / 1000).toFixed(2)}s`;
           }
-          
+
           grid.set(key, { status, timeMs, timeFormatted, answer, isCorrect });
         }
       }
     }
   }
-  
+
   return grid;
 });
 
-function getStatus(dayId: number, agent: Agent, lang: Language, part: 1 | 2): string {
-  return statusGrid.value.get(`${dayId}-${agent}-${lang}-${part}`)?.status || "none";
+function getStatus(
+  dayId: number,
+  agent: Agent,
+  lang: Language,
+  part: 1 | 2
+): string {
+  return (
+    statusGrid.value.get(`${dayId}-${agent}-${lang}-${part}`)?.status || "none"
+  );
 }
 
-function getTimeMs(dayId: number, agent: Agent, lang: Language, part: 1 | 2): number | null {
-  return statusGrid.value.get(`${dayId}-${agent}-${lang}-${part}`)?.timeMs ?? null;
+function getTimeMs(
+  dayId: number,
+  agent: Agent,
+  lang: Language,
+  part: 1 | 2
+): number | null {
+  return (
+    statusGrid.value.get(`${dayId}-${agent}-${lang}-${part}`)?.timeMs ?? null
+  );
 }
 
-function getTimeFormatted(dayId: number, agent: Agent, lang: Language, part: 1 | 2): string | null {
-  return statusGrid.value.get(`${dayId}-${agent}-${lang}-${part}`)?.timeFormatted || null;
+function getTimeFormatted(
+  dayId: number,
+  agent: Agent,
+  lang: Language,
+  part: 1 | 2
+): string | null {
+  return (
+    statusGrid.value.get(`${dayId}-${agent}-${lang}-${part}`)?.timeFormatted ||
+    null
+  );
 }
 
 // Speed rankings per day/part/lang - only count successful runs
 const speedRankings = computed(() => {
   if (!days.value) return new Map();
-  
-  const rankings = new Map<string, { agent: Agent; timeMs: number; rank: number }[]>();
-  
+
+  const rankings = new Map<
+    string,
+    { agent: Agent; timeMs: number; rank: number }[]
+  >();
+
   for (const day of days.value) {
     for (const part of [1, 2] as const) {
       for (const lang of languages) {
         const key = `${day.id}-${part}-${lang}`;
         const times: { agent: Agent; timeMs: number }[] = [];
-        
+
         for (const agent of agents) {
           const status = getStatus(day.id, agent, lang, part);
           const timeMs = getTimeMs(day.id, agent, lang, part);
@@ -104,48 +137,62 @@ const speedRankings = computed(() => {
             times.push({ agent, timeMs });
           }
         }
-        
+
         // Sort by time (fastest first)
         times.sort((a, b) => a.timeMs - b.timeMs);
-        
+
         // Assign ranks
         const ranked = times.map((t, idx) => ({ ...t, rank: idx + 1 }));
         rankings.set(key, ranked);
       }
     }
   }
-  
+
   return rankings;
 });
 
-function getRank(dayId: number, agent: Agent, lang: Language, part: 1 | 2): number | null {
+function getRank(
+  dayId: number,
+  agent: Agent,
+  lang: Language,
+  part: 1 | 2
+): number | null {
   const key = `${dayId}-${part}-${lang}`;
   const ranking = speedRankings.value.get(key);
   if (!ranking) return null;
-  const entry = ranking.find(r => r.agent === agent);
+  const entry = ranking.find((r) => r.agent === agent);
   return entry?.rank ?? null;
 }
 
-function isFastest(dayId: number, agent: Agent, lang: Language, part: 1 | 2): boolean {
+function isFastest(
+  dayId: number,
+  agent: Agent,
+  lang: Language,
+  part: 1 | 2
+): boolean {
   return getRank(dayId, agent, lang, part) === 1;
 }
 
 // Agent leaderboard based on SPEED (wins count)
 const agentLeaderboard = computed(() => {
-  const scores: Record<Agent, { 
-    wins: number;       // 1st place finishes
-    podiums: number;    // Top 3 finishes  
-    totalTimeMs: number; // Total time for comparison
-    correct: number;    // Correct answers
-    errors: number;
-  }> = {
+  const scores: Record<
+    Agent,
+    {
+      wins: number; // 1st place finishes
+      podiums: number; // Top 3 finishes
+      totalTimeMs: number; // Total time for comparison
+      correct: number; // Correct answers
+      errors: number;
+    }
+  > = {
     claude: { wins: 0, podiums: 0, totalTimeMs: 0, correct: 0, errors: 0 },
     codex: { wins: 0, podiums: 0, totalTimeMs: 0, correct: 0, errors: 0 },
     gemini: { wins: 0, podiums: 0, totalTimeMs: 0, correct: 0, errors: 0 },
   };
-  
-  if (!days.value) return Object.entries(scores).sort((a, b) => b[1].wins - a[1].wins);
-  
+
+  if (!days.value)
+    return Object.entries(scores).sort((a, b) => b[1].wins - a[1].wins);
+
   for (const day of days.value) {
     for (const agent of agents) {
       for (const lang of languages) {
@@ -153,7 +200,7 @@ const agentLeaderboard = computed(() => {
           const status = getStatus(day.id, agent, lang, part);
           const timeMs = getTimeMs(day.id, agent, lang, part);
           const rank = getRank(day.id, agent, lang, part);
-          
+
           if (status === "success") {
             scores[agent].correct++;
             if (timeMs) scores[agent].totalTimeMs += timeMs;
@@ -166,7 +213,7 @@ const agentLeaderboard = computed(() => {
       }
     }
   }
-  
+
   // Sort by: wins, then podiums, then total time (less is better)
   return Object.entries(scores).sort((a, b) => {
     if (b[1].wins !== a[1].wins) return b[1].wins - a[1].wins;
@@ -186,7 +233,7 @@ async function runDayBattle(dayId: number, useSample: boolean = false) {
         for (const lang of languages) {
           const key = `${agent}-${dayId}-${part}-${lang}`;
           runningItems.value.add(key);
-          
+
           try {
             const res = await $fetch<{
               answer: string;
@@ -197,7 +244,7 @@ async function runDayBattle(dayId: number, useSample: boolean = false) {
               method: "POST",
               body: { agent, day: dayId, part, language: lang, useSample },
             });
-            
+
             results.results.push({
               agent,
               part,
@@ -225,7 +272,7 @@ async function runDayBattle(dayId: number, useSample: boolean = false) {
         }
       }
     }
-    
+
     await refresh();
     currentResults.value = results;
     showResults.value = true;
@@ -236,10 +283,16 @@ async function runDayBattle(dayId: number, useSample: boolean = false) {
 }
 
 // Run single solver
-async function runSingle(dayId: number, agent: Agent, part: 1 | 2, lang: Language, useSample: boolean = false) {
+async function runSingle(
+  dayId: number,
+  agent: Agent,
+  part: 1 | 2,
+  lang: Language,
+  useSample: boolean = false
+) {
   const key = `${agent}-${dayId}-${part}-${lang}`;
   runningItems.value.add(key);
-  
+
   try {
     await $fetch("/api/runs", {
       method: "POST",
@@ -272,19 +325,21 @@ function formatTotalTime(ms: number): string {
 // Sorted results for modal (by time, fastest first)
 const sortedResults = computed(() => {
   if (!currentResults.value) return [];
-  
+
   // Group by part+lang, then sort each group by time
   const grouped = new Map<string, typeof currentResults.value.results>();
-  
+
   for (const r of currentResults.value.results) {
     const key = `${r.part}-${r.language}`;
     if (!grouped.has(key)) grouped.set(key, []);
     grouped.get(key)!.push(r);
   }
-  
+
   // Sort each group by time and assign ranks
-  const result: (typeof currentResults.value.results[0] & { rank: number })[] = [];
-  
+  const result: ((typeof currentResults.value.results)[0] & {
+    rank: number;
+  })[] = [];
+
   for (const [, group] of grouped) {
     const sorted = [...group].sort((a, b) => {
       if (a.error && !b.error) return 1;
@@ -293,12 +348,12 @@ const sortedResults = computed(() => {
       if (a.isCorrect && !b.isCorrect) return -1;
       return a.timeMs - b.timeMs;
     });
-    
+
     sorted.forEach((r, idx) => {
       result.push({ ...r, rank: r.isCorrect ? idx + 1 : 0 });
     });
   }
-  
+
   // Sort by part, then lang, then rank
   return result.sort((a, b) => {
     if (a.part !== b.part) return a.part - b.part;
@@ -317,48 +372,65 @@ function closeResults() {
   <div class="space-y-8">
     <!-- Hero Header -->
     <div class="text-center py-4">
-      <h1 class="text-3xl font-bold text-aoc-gold mb-2">🎄 AoC 2025 Battle Royale 🎄</h1>
-      <p class="text-text-muted">3 AI Agents • 12 Days • <span class="text-aoc-green font-bold">Fastest Wins</span> 🏎️</p>
+      <h1 class="text-3xl font-bold text-aoc-gold mb-2">
+        🎄 AoC 2025 Battle Royale 🎄
+      </h1>
+      <p class="text-text-muted">
+        3 AI Agents • 12 Days •
+        <span class="text-aoc-green font-bold">Fastest Wins</span> 🏎️
+      </p>
     </div>
 
     <!-- Speed Leaderboard -->
     <div class="card p-6">
       <h2 class="text-xl font-bold text-aoc-gold mb-4">🏆 Speed Leaderboard</h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div 
-          v-for="([agent, score], index) in agentLeaderboard" 
+        <div
+          v-for="([agent, score], index) in agentLeaderboard"
           :key="agent"
           class="p-4 rounded-lg border-2 transition-all"
           :class="{
-            'border-yellow-500 bg-yellow-500/10 shadow-lg shadow-yellow-500/20': index === 0,
+            'border-yellow-500 bg-yellow-500/10 shadow-lg shadow-yellow-500/20':
+              index === 0,
             'border-gray-400 bg-gray-400/10': index === 1,
             'border-amber-700 bg-amber-700/10': index === 2,
           }"
         >
           <div class="flex items-center gap-3 mb-3">
-            <span class="text-3xl">{{ index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉' }}</span>
-            <span :class="`agent-${agent}`" class="px-3 py-1 rounded border text-lg font-bold capitalize">
+            <span class="text-3xl">{{
+              index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"
+            }}</span>
+            <span
+              :class="`agent-${agent}`"
+              class="px-3 py-1 rounded border text-lg font-bold capitalize"
+            >
               {{ agent }}
             </span>
           </div>
-          
+
           <!-- Main stat: Wins -->
           <div class="text-center mb-3">
             <div class="text-4xl font-bold text-aoc-gold">{{ score.wins }}</div>
             <div class="text-sm text-text-muted">🏆 Fastest Times</div>
           </div>
-          
+
           <div class="grid grid-cols-3 gap-2 text-center text-sm">
             <div>
-              <div class="text-lg font-bold text-aoc-silver">{{ score.podiums }}</div>
+              <div class="text-lg font-bold text-aoc-silver">
+                {{ score.podiums }}
+              </div>
               <div class="text-xs text-text-muted">Podiums</div>
             </div>
             <div>
-              <div class="text-lg font-bold text-aoc-green">{{ score.correct }}</div>
+              <div class="text-lg font-bold text-aoc-green">
+                {{ score.correct }}
+              </div>
               <div class="text-xs text-text-muted">Correct</div>
             </div>
             <div>
-              <div class="text-lg font-bold text-white">{{ formatTotalTime(score.totalTimeMs) }}</div>
+              <div class="text-lg font-bold text-white">
+                {{ formatTotalTime(score.totalTimeMs) }}
+              </div>
               <div class="text-xs text-text-muted">Total</div>
             </div>
           </div>
@@ -375,7 +447,10 @@ function closeResults() {
     <div v-else-if="error" class="card p-6 text-center text-aoc-red">
       <div class="text-2xl mb-2">❌</div>
       <p>Failed to load: {{ error.message }}</p>
-      <button @click="refresh" class="mt-4 px-4 py-2 bg-bg-hover text-aoc-green rounded hover:bg-bg-card">
+      <button
+        @click="refresh"
+        class="mt-4 px-4 py-2 bg-bg-hover text-aoc-green rounded hover:bg-bg-card"
+      >
         Retry
       </button>
     </div>
@@ -383,10 +458,10 @@ function closeResults() {
     <!-- Days Control Panel -->
     <div v-else class="space-y-4">
       <h2 class="text-xl font-bold text-aoc-gold">📅 Race Results</h2>
-      
+
       <div class="grid gap-4">
-        <div 
-          v-for="day in days" 
+        <div
+          v-for="day in days"
           :key="day.id"
           class="card p-4 hover:border-aoc-green/50 transition-all"
           :class="{ 'ring-2 ring-aoc-gold': runningDay === day.id }"
@@ -394,15 +469,19 @@ function closeResults() {
           <!-- Day Header -->
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-3">
-              <span class="text-2xl">{{ day.id === 0 ? '🧪' : '🏁' }}</span>
+              <span class="text-2xl">{{ day.id === 0 ? "🧪" : "🏁" }}</span>
               <div>
                 <h3 class="text-lg font-bold text-aoc-green">
-                  Day {{ day.id.toString().padStart(2, '0') }}
-                  <span v-if="day.id === 0" class="text-sm text-text-muted font-normal">(Test)</span>
+                  Day {{ day.id.toString().padStart(2, "0") }}
+                  <span
+                    v-if="day.id === 0"
+                    class="text-sm text-text-muted font-normal"
+                    >(Test)</span
+                  >
                 </h3>
               </div>
             </div>
-            
+
             <!-- Action Buttons -->
             <div class="flex gap-2">
               <button
@@ -410,24 +489,30 @@ function closeResults() {
                 :disabled="runningDay !== null"
                 class="px-3 py-2 rounded text-sm font-medium transition-all"
                 :class="{
-                  'bg-aoc-silver/20 text-aoc-silver hover:bg-aoc-silver/30': runningDay !== day.id,
-                  'bg-aoc-gold/20 text-aoc-gold animate-pulse': runningDay === day.id,
-                  'opacity-50 cursor-not-allowed': runningDay !== null && runningDay !== day.id,
+                  'bg-aoc-silver/20 text-aoc-silver hover:bg-aoc-silver/30':
+                    runningDay !== day.id,
+                  'bg-aoc-gold/20 text-aoc-gold animate-pulse':
+                    runningDay === day.id,
+                  'opacity-50 cursor-not-allowed':
+                    runningDay !== null && runningDay !== day.id,
                 }"
               >
-                {{ runningDay === day.id ? '⏳' : '🧪' }} Sample
+                {{ runningDay === day.id ? "⏳" : "🧪" }} Sample
               </button>
               <button
                 @click="runDayBattle(day.id, false)"
                 :disabled="runningDay !== null"
                 class="px-4 py-2 rounded text-sm font-bold transition-all"
                 :class="{
-                  'bg-aoc-green text-bg-main hover:bg-aoc-green/80': runningDay !== day.id,
-                  'bg-aoc-gold text-bg-main animate-pulse': runningDay === day.id,
-                  'opacity-50 cursor-not-allowed': runningDay !== null && runningDay !== day.id,
+                  'bg-aoc-green text-bg-main hover:bg-aoc-green/80':
+                    runningDay !== day.id,
+                  'bg-aoc-gold text-bg-main animate-pulse':
+                    runningDay === day.id,
+                  'opacity-50 cursor-not-allowed':
+                    runningDay !== null && runningDay !== day.id,
                 }"
               >
-                {{ runningDay === day.id ? '⏳ Racing...' : '🏎️ Start Race' }}
+                {{ runningDay === day.id ? "⏳ Racing..." : "🏎️ Start Race" }}
               </button>
             </div>
           </div>
@@ -445,9 +530,16 @@ function closeResults() {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="agent in agents" :key="agent" class="border-b border-border/50 hover:bg-bg-hover/30">
+                <tr
+                  v-for="agent in agents"
+                  :key="agent"
+                  class="border-b border-border/50 hover:bg-bg-hover/30"
+                >
                   <td class="py-2 px-2">
-                    <span :class="`agent-${agent}`" class="px-2 py-0.5 rounded border text-xs font-medium capitalize">
+                    <span
+                      :class="`agent-${agent}`"
+                      class="px-2 py-0.5 rounded border text-xs font-medium capitalize"
+                    >
                       {{ agent }}
                     </span>
                   </td>
@@ -459,49 +551,99 @@ function closeResults() {
                           :disabled="runningItems.size > 0"
                           class="inline-flex flex-col items-center gap-0.5 px-2 py-1 rounded transition-all min-w-[70px]"
                           :class="{
-                            'opacity-50': runningItems.size > 0 && !isRunning(agent, day.id, part, lang),
-                            'bg-yellow-500/20 ring-1 ring-yellow-500': isFastest(day.id, agent, lang, part),
-                            'hover:bg-bg-hover': !isFastest(day.id, agent, lang, part),
+                            'opacity-50':
+                              runningItems.size > 0 &&
+                              !isRunning(agent, day.id, part, lang),
+                            'bg-yellow-500/20 ring-1 ring-yellow-500':
+                              isFastest(day.id, agent, lang, part),
+                            'hover:bg-bg-hover': !isFastest(
+                              day.id,
+                              agent,
+                              lang,
+                              part
+                            ),
                           }"
                         >
                           <!-- Rank badge -->
                           <div class="flex items-center gap-1">
-                            <span 
+                            <span
                               v-if="getRank(day.id, agent, lang, part)"
                               class="text-xs font-bold"
                               :class="{
-                                'text-yellow-400': getRank(day.id, agent, lang, part) === 1,
-                                'text-gray-400': getRank(day.id, agent, lang, part) === 2,
-                                'text-amber-600': getRank(day.id, agent, lang, part) === 3,
+                                'text-yellow-400':
+                                  getRank(day.id, agent, lang, part) === 1,
+                                'text-gray-400':
+                                  getRank(day.id, agent, lang, part) === 2,
+                                'text-amber-600':
+                                  getRank(day.id, agent, lang, part) === 3,
                               }"
                             >
-                              {{ getRank(day.id, agent, lang, part) === 1 ? '🥇' : 
-                                 getRank(day.id, agent, lang, part) === 2 ? '🥈' : 
-                                 getRank(day.id, agent, lang, part) === 3 ? '🥉' : '' }}
+                              {{
+                                getRank(day.id, agent, lang, part) === 1
+                                  ? "🥇"
+                                  : getRank(day.id, agent, lang, part) === 2
+                                  ? "🥈"
+                                  : getRank(day.id, agent, lang, part) === 3
+                                  ? "🥉"
+                                  : ""
+                              }}
                             </span>
-                            <span 
+                            <span
                               class="text-lg"
                               :class="{
-                                'animate-spin': isRunning(agent, day.id, part, lang),
-                                'text-aoc-green': getStatus(day.id, agent, lang, part) === 'success',
-                                'text-aoc-red': getStatus(day.id, agent, lang, part) === 'error',
-                                'text-aoc-silver': getStatus(day.id, agent, lang, part) === 'pending',
-                                'text-text-muted/30': getStatus(day.id, agent, lang, part) === 'none',
+                                'animate-spin': isRunning(
+                                  agent,
+                                  day.id,
+                                  part,
+                                  lang
+                                ),
+                                'text-aoc-green':
+                                  getStatus(day.id, agent, lang, part) ===
+                                  'success',
+                                'text-aoc-red':
+                                  getStatus(day.id, agent, lang, part) ===
+                                  'error',
+                                'text-aoc-silver':
+                                  getStatus(day.id, agent, lang, part) ===
+                                  'pending',
+                                'text-text-muted/30':
+                                  getStatus(day.id, agent, lang, part) ===
+                                  'none',
                               }"
                             >
-                              {{ isRunning(agent, day.id, part, lang) ? '⏳' : 
-                                 getStatus(day.id, agent, lang, part) === 'success' ? '✓' :
-                                 getStatus(day.id, agent, lang, part) === 'error' ? '✗' :
-                                 getStatus(day.id, agent, lang, part) === 'pending' ? '?' : '·' }}
+                              {{
+                                isRunning(agent, day.id, part, lang)
+                                  ? "⏳"
+                                  : getStatus(day.id, agent, lang, part) ===
+                                    "success"
+                                  ? "✓"
+                                  : getStatus(day.id, agent, lang, part) ===
+                                    "error"
+                                  ? "✗"
+                                  : getStatus(day.id, agent, lang, part) ===
+                                    "pending"
+                                  ? "?"
+                                  : "·"
+                              }}
                             </span>
                           </div>
                           <!-- Time -->
-                          <span 
-                            v-if="getTimeFormatted(day.id, agent, lang, part)" 
+                          <span
+                            v-if="getTimeFormatted(day.id, agent, lang, part)"
                             class="text-[10px] font-mono"
                             :class="{
-                              'text-yellow-400 font-bold': isFastest(day.id, agent, lang, part),
-                              'text-text-muted': !isFastest(day.id, agent, lang, part),
+                              'text-yellow-400 font-bold': isFastest(
+                                day.id,
+                                agent,
+                                lang,
+                                part
+                              ),
+                              'text-text-muted': !isFastest(
+                                day.id,
+                                agent,
+                                lang,
+                                part
+                              ),
                             }"
                           >
                             {{ getTimeFormatted(day.id, agent, lang, part) }}
@@ -520,19 +662,29 @@ function closeResults() {
 
     <!-- Results Modal with Speed Rankings -->
     <Teleport to="body">
-      <div 
-        v-if="showResults && currentResults" 
+      <div
+        v-if="showResults && currentResults"
         class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
         @click.self="closeResults"
       >
-        <div class="bg-bg-card border border-border rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
-          <div class="p-4 border-b border-border flex items-center justify-between">
+        <div
+          class="bg-bg-card border border-border rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden"
+        >
+          <div
+            class="p-4 border-b border-border flex items-center justify-between"
+          >
             <h2 class="text-xl font-bold text-aoc-gold">
-              🏁 Day {{ currentResults.day.toString().padStart(2, '0') }} Race Results
+              🏁 Day {{ currentResults.day.toString().padStart(2, "0") }} Race
+              Results
             </h2>
-            <button @click="closeResults" class="text-text-muted hover:text-white text-2xl">&times;</button>
+            <button
+              @click="closeResults"
+              class="text-text-muted hover:text-white text-2xl"
+            >
+              &times;
+            </button>
           </div>
-          
+
           <div class="p-4 overflow-auto max-h-[calc(90vh-80px)]">
             <!-- Results grouped by Part/Lang -->
             <div class="space-y-6">
@@ -542,39 +694,65 @@ function closeResults() {
                     Part {{ part }} - {{ lang.toUpperCase() }}
                   </h3>
                   <div class="space-y-2">
-                    <div 
-                      v-for="(result, idx) in sortedResults.filter(r => r.part === part && r.language === lang)"
+                    <div
+                      v-for="(result, idx) in sortedResults.filter(
+                        (r) => r.part === part && r.language === lang
+                      )"
                       :key="`${result.agent}-${result.part}-${result.language}`"
                       class="flex items-center justify-between p-3 rounded-lg"
                       :class="{
-                        'bg-yellow-500/20 border border-yellow-500': result.rank === 1 && result.isCorrect,
-                        'bg-gray-500/10 border border-gray-500': result.rank === 2 && result.isCorrect,
-                        'bg-amber-700/10 border border-amber-700': result.rank === 3 && result.isCorrect,
+                        'bg-yellow-500/20 border border-yellow-500':
+                          result.rank === 1 && result.isCorrect,
+                        'bg-gray-500/10 border border-gray-500':
+                          result.rank === 2 && result.isCorrect,
+                        'bg-amber-700/10 border border-amber-700':
+                          result.rank === 3 && result.isCorrect,
                         'bg-bg-hover': result.rank > 3 || !result.isCorrect,
                       }"
                     >
                       <div class="flex items-center gap-3">
                         <span class="text-2xl w-8 text-center">
-                          {{ result.rank === 1 ? '🥇' : result.rank === 2 ? '🥈' : result.rank === 3 ? '🥉' : '' }}
+                          {{
+                            result.rank === 1
+                              ? "🥇"
+                              : result.rank === 2
+                              ? "🥈"
+                              : result.rank === 3
+                              ? "🥉"
+                              : ""
+                          }}
                         </span>
-                        <span :class="`agent-${result.agent}`" class="px-3 py-1 rounded border font-bold capitalize">
+                        <span
+                          :class="`agent-${result.agent}`"
+                          class="px-3 py-1 rounded border font-bold capitalize"
+                        >
                           {{ result.agent }}
                         </span>
-                        <span v-if="result.error" class="text-aoc-red text-sm">{{ result.error }}</span>
-                        <span v-else-if="!result.isCorrect" class="text-aoc-red text-sm">Wrong answer</span>
+                        <span
+                          v-if="result.error"
+                          class="text-aoc-red text-sm"
+                          >{{ result.error }}</span
+                        >
+                        <span
+                          v-else-if="!result.isCorrect"
+                          class="text-aoc-red text-sm"
+                          >Wrong answer</span
+                        >
                       </div>
                       <div class="text-right">
-                        <div 
+                        <div
                           class="text-xl font-mono font-bold"
                           :class="{
-                            'text-yellow-400': result.rank === 1 && result.isCorrect,
-                            'text-white': result.rank !== 1 || !result.isCorrect,
+                            'text-yellow-400':
+                              result.rank === 1 && result.isCorrect,
+                            'text-white':
+                              result.rank !== 1 || !result.isCorrect,
                           }"
                         >
-                          {{ result.error ? '-' : formatTime(result.timeMs) }}
+                          {{ result.error ? "-" : formatTime(result.timeMs) }}
                         </div>
                         <div class="text-xs text-text-muted font-mono">
-                          {{ result.answer || '-' }}
+                          {{ result.answer || "-" }}
                         </div>
                       </div>
                     </div>
@@ -582,25 +760,42 @@ function closeResults() {
                 </div>
               </div>
             </div>
-            
+
             <!-- Winner Summary -->
             <div class="mt-6 pt-4 border-t border-border">
-              <h3 class="text-lg font-bold text-aoc-gold mb-3">🏆 Race Summary</h3>
+              <h3 class="text-lg font-bold text-aoc-gold mb-3">
+                🏆 Race Summary
+              </h3>
               <div class="grid grid-cols-3 gap-4 text-center">
-                <div v-for="agent in agents" :key="agent" class="p-3 rounded bg-bg-hover">
-                  <span :class="`agent-${agent}`" class="px-2 py-0.5 rounded border text-sm font-bold capitalize">
+                <div
+                  v-for="agent in agents"
+                  :key="agent"
+                  class="p-3 rounded bg-bg-hover"
+                >
+                  <span
+                    :class="`agent-${agent}`"
+                    class="px-2 py-0.5 rounded border text-sm font-bold capitalize"
+                  >
                     {{ agent }}
                   </span>
                   <div class="mt-2 flex justify-center gap-4">
                     <div>
                       <span class="text-xl font-bold text-yellow-400">
-                        {{ sortedResults.filter(r => r.agent === agent && r.rank === 1).length }}
+                        {{
+                          sortedResults.filter(
+                            (r) => r.agent === agent && r.rank === 1
+                          ).length
+                        }}
                       </span>
                       <span class="text-xs text-text-muted ml-1">🥇</span>
                     </div>
                     <div>
                       <span class="text-xl font-bold text-aoc-green">
-                        {{ sortedResults.filter(r => r.agent === agent && r.isCorrect === true).length }}
+                        {{
+                          sortedResults.filter(
+                            (r) => r.agent === agent && r.isCorrect === true
+                          ).length
+                        }}
                       </span>
                       <span class="text-xs text-text-muted ml-1">✓</span>
                     </div>
@@ -615,13 +810,22 @@ function closeResults() {
 
     <!-- Quick Links -->
     <div class="flex gap-4 justify-center pt-4">
-      <NuxtLink to="/debug" class="px-4 py-2 bg-bg-hover text-aoc-silver rounded hover:bg-bg-card transition-all">
+      <NuxtLink
+        to="/debug"
+        class="px-4 py-2 bg-bg-hover text-aoc-silver rounded hover:bg-bg-card transition-all"
+      >
         🔧 Debug
       </NuxtLink>
-      <NuxtLink to="/benchmarks" class="px-4 py-2 bg-bg-hover text-aoc-gold rounded hover:bg-bg-card transition-all">
+      <NuxtLink
+        to="/benchmarks"
+        class="px-4 py-2 bg-bg-hover text-aoc-gold rounded hover:bg-bg-card transition-all"
+      >
         📊 Benchmarks
       </NuxtLink>
-      <NuxtLink to="/admin" class="px-4 py-2 bg-bg-hover text-aoc-green rounded hover:bg-bg-card transition-all">
+      <NuxtLink
+        to="/admin"
+        class="px-4 py-2 bg-bg-hover text-aoc-green rounded hover:bg-bg-card transition-all"
+      >
         ⚙️ Admin
       </NuxtLink>
     </div>
