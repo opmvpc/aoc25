@@ -23,24 +23,34 @@ const timeFormatted = computed(() => {
   return `${(props.timeMs / 1000).toFixed(2)}s`;
 });
 
-const isFastest = computed(() => props.rank === 1 && props.status === "success");
+const isFastest = computed(
+  () => props.rank === 1 && props.status === "success"
+);
 
 const statusIcon = computed(() => {
-  if (props.isRunning) return '⏳';
+  if (props.isRunning) return "⏳";
   switch (props.status) {
-    case 'success': return '✓';
-    case 'error': return '✗';
-    case 'pending': return '?';
-    default: return '·';
+    case "success":
+      return "✓";
+    case "error":
+      return "✗";
+    case "pending":
+      return "?";
+    default:
+      return "·";
   }
 });
 
 const rankEmoji = computed(() => {
   switch (props.rank) {
-    case 1: return '🥇';
-    case 2: return '🥈';
-    case 3: return '🥉';
-    default: return null;
+    case 1:
+      return "🥇";
+    case 2:
+      return "🥈";
+    case 3:
+      return "🥉";
+    default:
+      return null;
   }
 });
 </script>
@@ -50,21 +60,22 @@ const rankEmoji = computed(() => {
     @click="emit('run')"
     class="relative flex flex-col items-center justify-center p-3 rounded-xl transition-all duration-300 min-w-[100px] min-h-[80px]"
     :class="{
-      'bg-yellow-500/20 ring-2 ring-yellow-500/50 shadow-lg shadow-yellow-500/20': isFastest,
+      'bg-yellow-500/20 ring-2 ring-yellow-500/50 shadow-lg shadow-yellow-500/20':
+        isFastest,
       'glass-subtle hover:bg-white/10': !isFastest,
       'opacity-50': isRunning,
     }"
   >
     <!-- Rank badge -->
-    <div 
-      v-if="rankEmoji && status === 'success'" 
+    <div
+      v-if="rankEmoji && status === 'success'"
       class="absolute -top-2 -right-2 text-lg"
     >
       {{ rankEmoji }}
     </div>
 
     <!-- Status icon -->
-    <div 
+    <div
       class="text-2xl mb-1"
       :class="{
         'animate-spin': isRunning,
@@ -78,7 +89,7 @@ const rankEmoji = computed(() => {
     </div>
 
     <!-- Time - BIGGER! -->
-    <div 
+    <div
       v-if="timeFormatted"
       class="font-mono font-bold"
       :class="isFastest ? 'text-lg time-winner' : 'text-sm text-white/60'"

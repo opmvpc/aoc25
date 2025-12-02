@@ -25,7 +25,7 @@ const runningItems = ref<Set<string>>(new Set());
 const statusGrid = computed(() => {
   if (!days.value) return new Map();
   const grid = new Map<string, { status: "success" | "error" | "pending" | "none"; timeMs: number | null }>();
-  
+
   for (const day of days.value) {
     for (const agent of agents) {
       for (const lang of languages) {
@@ -85,9 +85,9 @@ const leaderboard = computed(() => {
     codex: { wins: 0, totalMs: 0, days: 0 },
     gemini: { wins: 0, totalMs: 0, days: 0 },
   };
-  
+
   if (!days.value) return [];
-  
+
   for (const day of days.value) {
     if (day.id === 0) continue;
     for (const agent of agents) {
@@ -100,7 +100,7 @@ const leaderboard = computed(() => {
       }
     }
   }
-  
+
   return Object.entries(scores)
     .sort((a, b) => {
       if (a[1].days > 0 && b[1].days === 0) return -1;
@@ -188,7 +188,7 @@ const medal = (r: number | null) => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 
       <h1 class="text-xl font-black flex items-center gap-2">
         <span class="text-yellow-400">🏎️</span> AoC 2025 Battle Royale
       </h1>
-      
+
       <div class="flex items-center gap-3">
         <!-- Run All -->
         <UButton
@@ -202,18 +202,22 @@ const medal = (r: number | null) => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 
         >
           Run All
         </UButton>
-        
+
         <!-- Language Filter -->
         <div class="flex items-center gap-1 glass-subtle px-2 py-1 rounded-lg">
           <span class="text-[10px] text-white/40">Filter:</span>
-          <button 
-            v-for="opt in (['all', 'ts', 'c'] as const)" 
+          <button
+            v-for="opt in (['all', 'ts', 'c'] as const)"
             :key="opt"
             @click="langFilter = opt"
             class="px-2 py-0.5 rounded text-xs font-bold transition-all"
-            :class="langFilter === opt ? 'bg-yellow-500 text-black' : 'text-white/50 hover:text-white'"
+            :class="
+              langFilter === opt
+                ? 'bg-yellow-500 text-black'
+                : 'text-white/50 hover:text-white'
+            "
           >
-            {{ opt === 'all' ? 'All' : opt.toUpperCase() }}
+            {{ opt === "all" ? "All" : opt.toUpperCase() }}
           </button>
         </div>
       </div>
@@ -221,23 +225,34 @@ const medal = (r: number | null) => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 
 
     <!-- Leaderboard -->
     <div class="grid grid-cols-3 gap-2">
-      <div 
-        v-for="e in leaderboard" 
+      <div
+        v-for="e in leaderboard"
         :key="e.agent"
         class="glass rounded-lg p-2 flex items-center gap-2"
         :class="{ 'ring-1 ring-yellow-500/50': e.rank === 1 }"
       >
-        <span class="text-xl">{{ medal(e.rank) || '🏅' }}</span>
+        <span class="text-xl">{{ medal(e.rank) || "🏅" }}</span>
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-1.5">
-            <span :class="`agent-${e.agent}`" class="px-1.5 py-0.5 rounded text-[10px] font-bold capitalize">{{ e.agent }}</span>
-            <span class="text-[9px] text-white/30 truncate">{{ modelNames[e.agent] }}</span>
+            <span
+              :class="`agent-${e.agent}`"
+              class="px-1.5 py-0.5 rounded text-[10px] font-bold capitalize"
+              >{{ e.agent }}</span
+            >
+            <span class="text-[9px] text-white/30 truncate">{{
+              modelNames[e.agent]
+            }}</span>
           </div>
           <div class="flex items-center gap-2 mt-0.5">
-            <span class="text-sm font-mono font-bold" :class="e.rank === 1 ? 'text-yellow-400' : 'text-white'">
-              {{ e.days > 0 ? fmtTotal(e.totalMs) : '—' }}
+            <span
+              class="text-sm font-mono font-bold"
+              :class="e.rank === 1 ? 'text-yellow-400' : 'text-white'"
+            >
+              {{ e.days > 0 ? fmtTotal(e.totalMs) : "—" }}
             </span>
-            <span class="text-[10px] text-white/30">{{ e.wins }}🏆 {{ e.days }}d</span>
+            <span class="text-[10px] text-white/30"
+              >{{ e.wins }}🏆 {{ e.days }}d</span
+            >
           </div>
         </div>
       </div>
@@ -245,36 +260,48 @@ const medal = (r: number | null) => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 
 
     <!-- Loading -->
     <div v-if="pending" class="text-center py-6">
-      <UIcon name="i-heroicons-arrow-path" class="w-6 h-6 animate-spin text-yellow-400" />
+      <UIcon
+        name="i-heroicons-arrow-path"
+        class="w-6 h-6 animate-spin text-yellow-400"
+      />
     </div>
     <UAlert v-else-if="error" color="error" :title="error.message" />
 
     <!-- Race Grid -->
     <div v-else class="space-y-1">
-      <div 
-        v-for="day in days" 
+      <div
+        v-for="day in days"
         :key="day.id"
         class="glass rounded-lg overflow-hidden"
         :class="{ 'ring-1 ring-yellow-500/40': runningDay === day.id }"
       >
         <div class="flex items-stretch">
           <!-- Day Column -->
-          <div class="w-14 shrink-0 flex flex-col items-center justify-center py-1 border-r border-white/10"
-               :class="day.id === 0 ? 'bg-purple-500/10' : 'bg-green-500/10'">
-            <span class="text-sm font-bold" :class="day.id === 0 ? 'text-purple-400' : 'text-green-400'">
-              {{ day.id.toString().padStart(2, '0') }}
+          <div
+            class="w-14 shrink-0 flex flex-col items-center justify-center py-1 border-r border-white/10"
+            :class="day.id === 0 ? 'bg-purple-500/10' : 'bg-green-500/10'"
+          >
+            <span
+              class="text-sm font-bold"
+              :class="day.id === 0 ? 'text-purple-400' : 'text-green-400'"
+            >
+              {{ day.id.toString().padStart(2, "0") }}
             </span>
             <div class="flex gap-0.5 mt-0.5">
-              <button 
-                @click="runDay(day.id, true)" 
+              <button
+                @click="runDay(day.id, true)"
                 :disabled="runningDay !== null || runningAll"
                 class="text-[8px] px-1 py-0.5 rounded bg-white/10 hover:bg-white/20 disabled:opacity-30"
-              >S</button>
-              <button 
-                @click="runDay(day.id, false)" 
+              >
+                S
+              </button>
+              <button
+                @click="runDay(day.id, false)"
                 :disabled="runningDay !== null || runningAll"
                 class="text-[8px] px-1 py-0.5 rounded bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 disabled:opacity-30"
-              >▶</button>
+              >
+                ▶
+              </button>
             </div>
           </div>
 
@@ -291,50 +318,94 @@ const medal = (r: number | null) => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 
               </colgroup>
               <thead>
                 <tr class="border-b border-white/5">
-                  <th class="py-0.5 px-1 text-left text-white/30 font-normal">Agent</th>
+                  <th class="py-0.5 px-1 text-left text-white/30 font-normal">
+                    Agent
+                  </th>
                   <template v-for="lang in filteredLangs" :key="lang">
-                    <th class="py-0.5 px-1 text-center text-white/30 font-normal">{{ lang.toUpperCase() }} P1</th>
-                    <th class="py-0.5 px-1 text-center text-white/30 font-normal">{{ lang.toUpperCase() }} P2</th>
+                    <th
+                      class="py-0.5 px-1 text-center text-white/30 font-normal"
+                    >
+                      {{ lang.toUpperCase() }} P1
+                    </th>
+                    <th
+                      class="py-0.5 px-1 text-center text-white/30 font-normal"
+                    >
+                      {{ lang.toUpperCase() }} P2
+                    </th>
                   </template>
-                  <th v-if="day.id !== 0" class="py-0.5 px-1 text-center text-white/30 font-normal">Total</th>
+                  <th
+                    v-if="day.id !== 0"
+                    class="py-0.5 px-1 text-center text-white/30 font-normal"
+                  >
+                    Total
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="agent in agents" :key="agent" class="border-b border-white/5 last:border-0 hover:bg-white/5">
+                <tr
+                  v-for="agent in agents"
+                  :key="agent"
+                  class="border-b border-white/5 last:border-0 hover:bg-white/5"
+                >
                   <td class="py-1 px-1">
-                    <span :class="`agent-${agent}`" class="px-1 py-0.5 rounded text-[9px] font-bold uppercase">
+                    <span
+                      :class="`agent-${agent}`"
+                      class="px-1 py-0.5 rounded text-[9px] font-bold uppercase"
+                    >
                       {{ agent.slice(0, 3) }}
                     </span>
                   </td>
                   <template v-for="lang in filteredLangs" :key="lang">
-                    <td v-for="part in [1, 2] as const" :key="part" class="py-1 px-1">
-                      <button 
+                    <td
+                      v-for="part in [1, 2] as const"
+                      :key="part"
+                      class="py-1 px-1"
+                    >
+                      <button
                         @click="runSingle(day.id, agent, part, lang)"
                         :disabled="runningDay !== null || runningAll"
                         class="w-full flex items-center justify-center gap-1 px-1 py-0.5 rounded transition-all hover:bg-white/10"
                         :class="{
-                          'bg-green-500/15': getCell(day.id, agent, lang, part).status === 'success',
-                          'bg-red-500/15': getCell(day.id, agent, lang, part).status === 'error',
-                          'animate-pulse bg-yellow-500/20': isRunning(agent, day.id, part, lang),
+                          'bg-green-500/15':
+                            getCell(day.id, agent, lang, part).status ===
+                            'success',
+                          'bg-red-500/15':
+                            getCell(day.id, agent, lang, part).status ===
+                            'error',
+                          'animate-pulse bg-yellow-500/20': isRunning(
+                            agent,
+                            day.id,
+                            part,
+                            lang
+                          ),
                         }"
                       >
-                        <span v-if="getRank(day.id, agent, lang, part)" class="text-[9px]">
+                        <span
+                          v-if="getRank(day.id, agent, lang, part)"
+                          class="text-[9px]"
+                        >
                           {{ medal(getRank(day.id, agent, lang, part)) }}
                         </span>
-                        <span 
+                        <span
                           class="font-mono tabular-nums"
-                          :class="getRank(day.id, agent, lang, part) === 1 ? 'text-yellow-400 font-semibold' : 'text-white/70'"
+                          :class="
+                            getRank(day.id, agent, lang, part) === 1
+                              ? 'text-yellow-400 font-semibold'
+                              : 'text-white/70'
+                          "
                         >
-                          {{ getCell(day.id, agent, lang, part).timeMs !== null 
-                             ? fmt(getCell(day.id, agent, lang, part).timeMs!) 
-                             : '—' }}
+                          {{
+                            getCell(day.id, agent, lang, part).timeMs !== null
+                              ? fmt(getCell(day.id, agent, lang, part).timeMs!)
+                              : "—"
+                          }}
                         </span>
                       </button>
                     </td>
                   </template>
                   <!-- Total -->
                   <td v-if="day.id !== 0" class="py-1 px-1">
-                    <div 
+                    <div
                       v-if="getDayTotal(day.id, agent) !== null"
                       class="flex items-center justify-center gap-1 px-1.5 py-0.5 rounded font-mono tabular-nums"
                       :class="{
@@ -344,7 +415,9 @@ const medal = (r: number | null) => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 
                         'text-white/50': !getDayRank(day.id, agent) || getDayRank(day.id, agent)! > 3,
                       }"
                     >
-                      <span class="text-[9px]">{{ medal(getDayRank(day.id, agent)) }}</span>
+                      <span class="text-[9px]">{{
+                        medal(getDayRank(day.id, agent))
+                      }}</span>
                       {{ fmtTotal(getDayTotal(day.id, agent)!) }}
                     </div>
                     <div v-else class="text-center text-white/20">—</div>

@@ -72,7 +72,9 @@ function fmt(ms: number): string {
       <h1 class="text-xl font-black flex items-center gap-2">
         <span class="text-yellow-400">🔧</span> Debug Runner
       </h1>
-      <NuxtLink to="/" class="text-xs text-white/30 hover:text-white">← Back</NuxtLink>
+      <NuxtLink to="/" class="text-xs text-white/30 hover:text-white"
+        >← Back</NuxtLink
+      >
     </div>
 
     <!-- Controls -->
@@ -87,9 +89,11 @@ function fmt(ms: number): string {
               :key="agent"
               @click="selectedAgent = agent"
               class="flex-1 px-2 py-1.5 rounded text-xs font-bold capitalize transition-all"
-              :class="selectedAgent === agent 
-                ? `agent-${agent}` 
-                : 'glass-subtle text-white/40 hover:text-white'"
+              :class="
+                selectedAgent === agent
+                  ? `agent-${agent}`
+                  : 'glass-subtle text-white/40 hover:text-white'
+              "
             >
               {{ agent }}
             </button>
@@ -116,9 +120,11 @@ function fmt(ms: number): string {
               :key="p"
               @click="selectedPart = p"
               class="flex-1 px-2 py-1.5 rounded text-xs font-bold transition-all"
-              :class="selectedPart === p 
-                ? 'bg-white/20 text-white' 
-                : 'glass-subtle text-white/40 hover:text-white'"
+              :class="
+                selectedPart === p
+                  ? 'bg-white/20 text-white'
+                  : 'glass-subtle text-white/40 hover:text-white'
+              "
             >
               P{{ p }}
             </button>
@@ -134,9 +140,11 @@ function fmt(ms: number): string {
               :key="lang"
               @click="selectedLanguage = lang"
               class="flex-1 px-2 py-1.5 rounded text-xs font-bold uppercase transition-all"
-              :class="selectedLanguage === lang 
-                ? 'bg-white/20 text-white' 
-                : 'glass-subtle text-white/40 hover:text-white'"
+              :class="
+                selectedLanguage === lang
+                  ? 'bg-white/20 text-white'
+                  : 'glass-subtle text-white/40 hover:text-white'
+              "
             >
               {{ lang }}
             </button>
@@ -150,18 +158,22 @@ function fmt(ms: number): string {
             <button
               @click="useSample = true"
               class="flex-1 px-2 py-1.5 text-xs font-bold transition-all"
-              :class="useSample 
-                ? 'bg-amber-500 text-black' 
-                : 'bg-black/30 text-white/40 hover:text-white'"
+              :class="
+                useSample
+                  ? 'bg-amber-500 text-black'
+                  : 'bg-black/30 text-white/40 hover:text-white'
+              "
             >
               🧪 Sample
             </button>
             <button
               @click="useSample = false"
               class="flex-1 px-2 py-1.5 text-xs font-bold transition-all"
-              :class="!useSample 
-                ? 'bg-blue-500 text-white' 
-                : 'bg-black/30 text-white/40 hover:text-white'"
+              :class="
+                !useSample
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-black/30 text-white/40 hover:text-white'
+              "
             >
               📄 Final
             </button>
@@ -186,53 +198,85 @@ function fmt(ms: number): string {
       <!-- Summary -->
       <div
         class="glass rounded-xl p-4 border-l-4"
-        :class="result.error || result.exitCode !== 0 ? 'border-red-500' : 'border-green-500'"
+        :class="
+          result.error || result.exitCode !== 0
+            ? 'border-red-500'
+            : 'border-green-500'
+        "
       >
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <span :class="`agent-${result.agent}`" class="px-2 py-1 rounded text-xs font-bold capitalize">
+            <span
+              :class="`agent-${result.agent}`"
+              class="px-2 py-1 rounded text-xs font-bold capitalize"
+            >
               {{ result.agent }}
             </span>
             <span class="text-white/60 text-sm">
-              Day {{ result.day }} · P{{ result.part }} · {{ result.language.toUpperCase() }} · 
-              <span :class="result.useSample ? 'text-amber-400' : 'text-blue-400'">
-                {{ result.useSample ? 'Sample' : 'Final' }}
+              Day {{ result.day }} · P{{ result.part }} ·
+              {{ result.language.toUpperCase() }} ·
+              <span
+                :class="result.useSample ? 'text-amber-400' : 'text-blue-400'"
+              >
+                {{ result.useSample ? "Sample" : "Final" }}
               </span>
             </span>
           </div>
           <div class="text-right">
             <div
               class="text-lg font-mono font-bold"
-              :class="result.error || result.exitCode !== 0 ? 'text-red-400' : 'text-green-400'"
+              :class="
+                result.error || result.exitCode !== 0
+                  ? 'text-red-400'
+                  : 'text-green-400'
+              "
             >
-              {{ result.error ? 'ERROR' : result.exitCode === 0 ? 'OK' : `Exit ${result.exitCode}` }}
+              {{
+                result.error
+                  ? "ERROR"
+                  : result.exitCode === 0
+                  ? "OK"
+                  : `Exit ${result.exitCode}`
+              }}
             </div>
-            <div class="text-xs text-white/40 font-mono">{{ fmt(result.timeMs) }}</div>
+            <div class="text-xs text-white/40 font-mono">
+              {{ fmt(result.timeMs) }}
+            </div>
           </div>
         </div>
 
         <!-- Command -->
-        <div class="mt-3 p-2 rounded bg-black/30 font-mono text-[11px] text-white/60 overflow-x-auto">
+        <div
+          class="mt-3 p-2 rounded bg-black/30 font-mono text-[11px] text-white/60 overflow-x-auto"
+        >
           <span class="text-white/30">$</span> {{ result.command }}
         </div>
       </div>
 
       <!-- Error -->
-      <div v-if="result.error" class="glass rounded-xl p-4 border border-red-500/30">
+      <div
+        v-if="result.error"
+        class="glass rounded-xl p-4 border border-red-500/30"
+      >
         <h3 class="text-sm font-bold text-red-400 mb-2">❌ Error</h3>
-        <pre class="text-xs text-red-300 font-mono whitespace-pre-wrap">{{ result.error }}</pre>
+        <pre class="text-xs text-red-300 font-mono whitespace-pre-wrap">{{
+          result.error
+        }}</pre>
       </div>
 
       <!-- Stdout -->
       <div class="glass rounded-xl p-4">
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-sm font-bold text-green-400">📤 stdout</h3>
-          <span class="text-[10px] text-white/30">{{ result.stdout.length }} chars</span>
+          <span class="text-[10px] text-white/30"
+            >{{ result.stdout.length }} chars</span
+          >
         </div>
         <pre
           v-if="result.stdout"
           class="p-3 rounded bg-black/30 font-mono text-xs text-white/80 overflow-x-auto whitespace-pre-wrap max-h-60"
-        >{{ result.stdout }}</pre>
+          >{{ result.stdout }}</pre
+        >
         <p v-else class="text-white/30 text-xs italic">No output</p>
       </div>
 
@@ -240,12 +284,15 @@ function fmt(ms: number): string {
       <div class="glass rounded-xl p-4">
         <div class="flex items-center justify-between mb-2">
           <h3 class="text-sm font-bold text-yellow-400">⚠️ stderr</h3>
-          <span class="text-[10px] text-white/30">{{ result.stderr.length }} chars</span>
+          <span class="text-[10px] text-white/30"
+            >{{ result.stderr.length }} chars</span
+          >
         </div>
         <pre
           v-if="result.stderr"
           class="p-3 rounded bg-black/30 font-mono text-xs text-yellow-200/80 overflow-x-auto whitespace-pre-wrap max-h-60"
-        >{{ result.stderr }}</pre>
+          >{{ result.stderr }}</pre
+        >
         <p v-else class="text-white/30 text-xs italic">No errors</p>
       </div>
     </div>

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { BenchmarkSession, Agent, Language } from "~/types";
 
-const { data: benchmarks, refresh } = await useFetch<BenchmarkSession[]>("/api/benchmarks");
+const { data: benchmarks, refresh } = await useFetch<BenchmarkSession[]>(
+  "/api/benchmarks"
+);
 
 const agents: Agent[] = ["claude", "codex", "gemini"];
 const languages: Language[] = ["ts", "c"];
@@ -81,15 +83,15 @@ function fmt(ms: number | null | undefined): string {
 }
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('fr-FR', { 
-    day: '2-digit', 
-    month: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
+  return new Date(dateStr).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
-const medal = (idx: number) => idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
+const medal = (idx: number) => (idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉");
 </script>
 
 <template>
@@ -99,7 +101,9 @@ const medal = (idx: number) => idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
       <h1 class="text-xl font-black flex items-center gap-2">
         <span class="text-yellow-400">📊</span> Benchmark Arena
       </h1>
-      <NuxtLink to="/" class="text-xs text-white/30 hover:text-white">← Back</NuxtLink>
+      <NuxtLink to="/" class="text-xs text-white/30 hover:text-white"
+        >← Back</NuxtLink
+      >
     </div>
 
     <!-- Run Form -->
@@ -112,9 +116,11 @@ const medal = (idx: number) => idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
             <button
               @click="form.agent = 'all'"
               class="px-2 py-1.5 rounded text-xs font-bold transition-all"
-              :class="form.agent === 'all' 
-                ? 'bg-yellow-500 text-black' 
-                : 'glass-subtle text-white/40 hover:text-white'"
+              :class="
+                form.agent === 'all'
+                  ? 'bg-yellow-500 text-black'
+                  : 'glass-subtle text-white/40 hover:text-white'
+              "
             >
               🏆 All
             </button>
@@ -123,9 +129,11 @@ const medal = (idx: number) => idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
               :key="agent"
               @click="form.agent = agent"
               class="px-2 py-1.5 rounded text-xs font-bold capitalize transition-all"
-              :class="form.agent === agent 
-                ? `agent-${agent}` 
-                : 'glass-subtle text-white/40 hover:text-white'"
+              :class="
+                form.agent === agent
+                  ? `agent-${agent}`
+                  : 'glass-subtle text-white/40 hover:text-white'
+              "
             >
               {{ agent.slice(0, 3) }}
             </button>
@@ -152,7 +160,11 @@ const medal = (idx: number) => idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
               :key="p"
               @click="form.part = p"
               class="flex-1 px-2 py-1.5 rounded text-xs font-bold transition-all"
-              :class="form.part === p ? 'bg-white/20 text-white' : 'glass-subtle text-white/40'"
+              :class="
+                form.part === p
+                  ? 'bg-white/20 text-white'
+                  : 'glass-subtle text-white/40'
+              "
             >
               P{{ p }}
             </button>
@@ -168,7 +180,11 @@ const medal = (idx: number) => idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
               :key="lang"
               @click="form.language = lang"
               class="flex-1 px-2 py-1.5 rounded text-xs font-bold uppercase transition-all"
-              :class="form.language === lang ? 'bg-white/20 text-white' : 'glass-subtle text-white/40'"
+              :class="
+                form.language === lang
+                  ? 'bg-white/20 text-white'
+                  : 'glass-subtle text-white/40'
+              "
             >
               {{ lang }}
             </button>
@@ -195,15 +211,21 @@ const medal = (idx: number) => idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
           icon="i-heroicons-play"
           @click="runBenchmark"
         >
-          {{ form.agent === 'all' ? 'Battle!' : 'Run' }}
+          {{ form.agent === "all" ? "Battle!" : "Run" }}
         </UButton>
       </div>
     </div>
 
     <!-- Battle Result -->
-    <div v-if="batchResult" class="glass rounded-xl p-4 ring-1 ring-yellow-500/30">
-      <h2 class="text-sm font-bold text-yellow-400 mb-3 flex items-center gap-2">
-        🏆 Battle Royale — Day {{ form.day }} P{{ form.part }} {{ form.language.toUpperCase() }}
+    <div
+      v-if="batchResult"
+      class="glass rounded-xl p-4 ring-1 ring-yellow-500/30"
+    >
+      <h2
+        class="text-sm font-bold text-yellow-400 mb-3 flex items-center gap-2"
+      >
+        🏆 Battle Royale — Day {{ form.day }} P{{ form.part }}
+        {{ form.language.toUpperCase() }}
       </h2>
 
       <div class="grid grid-cols-3 gap-3">
@@ -218,14 +240,29 @@ const medal = (idx: number) => idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
           }"
         >
           <div class="text-2xl mb-1">{{ medal(idx) }}</div>
-          <span :class="`agent-${item.agent}`" class="px-2 py-0.5 rounded text-xs font-bold capitalize">
+          <span
+            :class="`agent-${item.agent}`"
+            class="px-2 py-0.5 rounded text-xs font-bold capitalize"
+          >
             {{ item.agent }}
           </span>
-          <div class="text-xl font-mono font-bold mt-2" :class="idx === 0 ? 'text-yellow-400' : 'text-white'">
+          <div
+            class="text-xl font-mono font-bold mt-2"
+            :class="idx === 0 ? 'text-yellow-400' : 'text-white'"
+          >
             {{ fmt(item.avgTimeMs) }}
           </div>
-          <div class="text-[10px] mt-1" :class="item.isCorrect ? 'text-green-400' : 'text-red-400'">
-            {{ item.isCorrect === true ? '✓ Correct' : item.isCorrect === false ? '✗ Wrong' : '? Unchecked' }}
+          <div
+            class="text-[10px] mt-1"
+            :class="item.isCorrect ? 'text-green-400' : 'text-red-400'"
+          >
+            {{
+              item.isCorrect === true
+                ? "✓ Correct"
+                : item.isCorrect === false
+                ? "✗ Wrong"
+                : "? Unchecked"
+            }}
           </div>
         </div>
       </div>
@@ -237,34 +274,48 @@ const medal = (idx: number) => idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
 
       <div class="grid grid-cols-4 gap-4 mb-4">
         <div class="text-center">
-          <div class="text-2xl font-mono font-bold text-green-400">{{ fmt(result.avg_time_ms) }}</div>
+          <div class="text-2xl font-mono font-bold text-green-400">
+            {{ fmt(result.avg_time_ms) }}
+          </div>
           <div class="text-[10px] text-white/40">Average</div>
         </div>
         <div class="text-center">
-          <div class="text-2xl font-mono font-bold text-yellow-400">{{ fmt(result.p50_time_ms) }}</div>
+          <div class="text-2xl font-mono font-bold text-yellow-400">
+            {{ fmt(result.p50_time_ms) }}
+          </div>
           <div class="text-[10px] text-white/40">Median (P50)</div>
         </div>
         <div class="text-center">
-          <div class="text-2xl font-mono font-bold text-white/70">{{ fmt(result.min_time_ms) }}</div>
+          <div class="text-2xl font-mono font-bold text-white/70">
+            {{ fmt(result.min_time_ms) }}
+          </div>
           <div class="text-[10px] text-white/40">Min</div>
         </div>
         <div class="text-center">
-          <div class="text-2xl font-mono font-bold text-white/70">{{ fmt(result.max_time_ms) }}</div>
+          <div class="text-2xl font-mono font-bold text-white/70">
+            {{ fmt(result.max_time_ms) }}
+          </div>
           <div class="text-[10px] text-white/40">Max</div>
         </div>
       </div>
 
       <div class="grid grid-cols-3 gap-4 pt-3 border-t border-white/10">
         <div class="text-center">
-          <div class="text-lg font-mono text-white/60">{{ fmt(result.p95_time_ms) }}</div>
+          <div class="text-lg font-mono text-white/60">
+            {{ fmt(result.p95_time_ms) }}
+          </div>
           <div class="text-[10px] text-white/30">P95</div>
         </div>
         <div class="text-center">
-          <div class="text-lg font-mono text-white/60">{{ fmt(result.p99_time_ms) }}</div>
+          <div class="text-lg font-mono text-white/60">
+            {{ fmt(result.p99_time_ms) }}
+          </div>
           <div class="text-[10px] text-white/30">P99</div>
         </div>
         <div class="text-center">
-          <div class="text-lg font-mono text-white/60">±{{ fmt(result.std_dev_ms) }}</div>
+          <div class="text-lg font-mono text-white/60">
+            ±{{ fmt(result.std_dev_ms) }}
+          </div>
           <div class="text-[10px] text-white/30">Std Dev</div>
         </div>
       </div>
@@ -274,7 +325,10 @@ const medal = (idx: number) => idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
     <div class="glass rounded-xl p-4">
       <h2 class="text-sm font-bold text-white/60 mb-3">📜 History</h2>
 
-      <div v-if="!benchmarks?.length" class="text-white/30 text-sm text-center py-6">
+      <div
+        v-if="!benchmarks?.length"
+        class="text-white/30 text-sm text-center py-6"
+      >
         No benchmarks yet
       </div>
 
@@ -295,25 +349,60 @@ const medal = (idx: number) => idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
             </tr>
           </thead>
           <tbody>
-            <tr v-for="b in benchmarks" :key="b.id" class="border-b border-white/5 hover:bg-white/5">
+            <tr
+              v-for="b in benchmarks"
+              :key="b.id"
+              class="border-b border-white/5 hover:bg-white/5"
+            >
               <td class="py-1.5 px-2">
-                <span :class="`agent-${b.agent}`" class="px-1.5 py-0.5 rounded text-[10px] font-bold capitalize">
+                <span
+                  :class="`agent-${b.agent}`"
+                  class="px-1.5 py-0.5 rounded text-[10px] font-bold capitalize"
+                >
                   {{ b.agent.slice(0, 3) }}
                 </span>
               </td>
               <td class="py-1.5 px-2 text-center text-white/60">{{ b.day }}</td>
-              <td class="py-1.5 px-2 text-center text-white/60">P{{ b.part }}</td>
-              <td class="py-1.5 px-2 text-center text-white/60 uppercase">{{ b.language }}</td>
-              <td class="py-1.5 px-2 text-center text-white/40">{{ b.num_runs }}</td>
-              <td class="py-1.5 px-2 text-right font-mono text-green-400">{{ fmt(b.avg_time_ms) }}</td>
-              <td class="py-1.5 px-2 text-right font-mono text-yellow-400">{{ fmt(b.p50_time_ms) }}</td>
-              <td class="py-1.5 px-2 text-right font-mono text-white/50">{{ fmt(b.p95_time_ms) }}</td>
+              <td class="py-1.5 px-2 text-center text-white/60">
+                P{{ b.part }}
+              </td>
+              <td class="py-1.5 px-2 text-center text-white/60 uppercase">
+                {{ b.language }}
+              </td>
+              <td class="py-1.5 px-2 text-center text-white/40">
+                {{ b.num_runs }}
+              </td>
+              <td class="py-1.5 px-2 text-right font-mono text-green-400">
+                {{ fmt(b.avg_time_ms) }}
+              </td>
+              <td class="py-1.5 px-2 text-right font-mono text-yellow-400">
+                {{ fmt(b.p50_time_ms) }}
+              </td>
+              <td class="py-1.5 px-2 text-right font-mono text-white/50">
+                {{ fmt(b.p95_time_ms) }}
+              </td>
               <td class="py-1.5 px-2 text-center">
-                <span :class="b.is_correct === true ? 'text-green-400' : b.is_correct === false ? 'text-red-400' : 'text-white/30'">
-                  {{ b.is_correct === true ? '✓' : b.is_correct === false ? '✗' : '?' }}
+                <span
+                  :class="
+                    b.is_correct === true
+                      ? 'text-green-400'
+                      : b.is_correct === false
+                      ? 'text-red-400'
+                      : 'text-white/30'
+                  "
+                >
+                  {{
+                    b.is_correct === true
+                      ? "✓"
+                      : b.is_correct === false
+                      ? "✗"
+                      : "?"
+                  }}
                 </span>
               </td>
-              <td class="py-1.5 px-2 text-right text-white/30">{{ formatDate(b.created_at) }}</td>
+              <td class="py-1.5 px-2 text-right text-white/30">
+                {{ formatDate(b.created_at) }}
+              </td>
             </tr>
           </tbody>
         </table>

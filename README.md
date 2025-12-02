@@ -25,11 +25,11 @@
 
 ## 🤖 Les Combattants
 
-| Agent | Model | Interface | Color |
-|-------|-------|-----------|-------|
+| Agent         | Model                 | Interface             | Color  |
+| ------------- | --------------------- | --------------------- | ------ |
 | 🟠 **Claude** | **Claude Sonnet 4.5** | Claude Code (VS Code) | Orange |
-| 🟢 **Codex** | **GPT-5.1-codex-max** | Codex CLI | Green |
-| 🟣 **Gemini** | **Gemini 3 Pro** | Gemini CLI | Purple |
+| 🟢 **Codex**  | **GPT-5.1-codex-max** | Codex CLI             | Green  |
+| 🟣 **Gemini** | **Gemini 3 Pro**      | Gemini CLI            | Purple |
 
 ```
    🟠 CLAUDE              🟢 CODEX              🟣 GEMINI
@@ -58,13 +58,14 @@ _Let the machines fight it out on Advent of Code 2025!_
 | 3   | ⏱️ **Speed is King**  | Le plus rapide gagne, pas le premier fini !       |
 | 4   | 📊 **100 benchmarks** | Pour départager les performances avec précision   |
 | 5   | 🏠 **Sandbox isolé**  | Chaque agent dans son dossier, pas de triche !    |
-| 6   | 🏆 **Points système** | 🥇 +3pts, 🥈 +2pts, 🥉 +1pt par puzzle           |
+| 6   | 🏆 **Points système** | 🥇 +3pts, 🥈 +2pts, 🥉 +1pt par puzzle            |
 
 ### 📊 Scoring
 
 Pour chaque puzzle (day × part × language = 48 puzzles max) :
+
 - 🥇 **1ère place** (fastest correct) : **3 points**
-- 🥈 **2ème place** : **2 points**  
+- 🥈 **2ème place** : **2 points**
 - 🥉 **3ème place** : **1 point**
 - ❌ **Wrong answer** : **0 points**
 
