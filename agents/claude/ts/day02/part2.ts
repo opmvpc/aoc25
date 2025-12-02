@@ -5,77 +5,84 @@
 
 import type { ISolver } from "../../tools/runner/types.js";
 
-function isInvalidID(n: number): boolean {
-  const s = n.toString();
-  const len = s.length;
+function generateInvalids(start: number, end: number): number[] {
+  const invalids: number[] = [];
+  const startLen = start.toString().length;
+  const endLen = end.toString().length;
 
-  // Try all possible pattern lengths (from 1 to len/2)
-  for (let patternLen = 1; patternLen <= len / 2; patternLen++) {
-    // Length must be divisible by pattern length
-    if (len % patternLen !== 0) continue;
+  // For each possible total length
+  for (let totalLen = startLen; totalLen <= endLen; totalLen++) {
+    // For each possible pattern length that divides totalLen
+    for (let patternLen = 1; patternLen <= totalLen / 2; patternLen++) {
+      if (totalLen % patternLen !== 0) continue;
 
-    const repeatCount = len / patternLen;
-    // Must have at least 2 repetitions
-    if (repeatCount < 2) continue;
+      const repeatCount = totalLen / patternLen;
+      if (repeatCount < 2) continue;
 
-    const pattern = s.slice(0, patternLen);
+      // Generate all patterns of this length (no leading zero)
+      const minPattern = Math.pow(10, patternLen - 1);
+      const maxPattern = Math.pow(10, patternLen) - 1;
 
-    // Check if pattern has leading zero (not allowed)
-    if (pattern[0] === '0') continue;
+      for (let pattern = minPattern; pattern <= maxPattern; pattern++) {
+        // Build repeated number
+        let repeated = 0;
+        let multiplier = 1;
+        for (let i = 0; i < repeatCount; i++) {
+          repeated += pattern * multiplier;
+          multiplier *= Math.pow(10, patternLen);
+        }
 
-    // Check if entire string is pattern repeated
-    let isRepeated = true;
-    for (let i = patternLen; i < len; i += patternLen) {
-      if (s.slice(i, i + patternLen) !== pattern) {
-        isRepeated = false;
-        break;
+        // Check if in range
+        if (repeated >= start && repeated <= end) {
+          invalids.push(repeated);
+        } else if (repeated > end) {
+          break; // No point continuing
+        }
       }
     }
-
-    if (isRepeated) return true;
   }
 
-  return false;
+  return invalids;
 }
 
 export const solver: ISolver = {
   solve(input: string): string {
     const text = input.trim();
 
-    let sum = 0;
+    // Parse all ranges
+    const ranges: [number, number][] = [];
     let i = 0;
 
-    // Manual parsing for performance
     while (i < text.length) {
-      // Skip whitespace and commas
       while (i < text.length && (text[i] === ',' || text[i] === ' ' || text[i] === '\n')) {
         i++;
       }
 
       if (i >= text.length) break;
 
-      // Parse start number
       let start = 0;
       while (i < text.length && text[i] >= '0' && text[i] <= '9') {
         start = start * 10 + (text.charCodeAt(i) - 48);
         i++;
       }
 
-      // Skip dash
       if (i < text.length && text[i] === '-') i++;
 
-      // Parse end number
       let end = 0;
       while (i < text.length && text[i] >= '0' && text[i] <= '9') {
         end = end * 10 + (text.charCodeAt(i) - 48);
         i++;
       }
 
-      // Check all numbers in range
-      for (let n = start; n <= end; n++) {
-        if (isInvalidID(n)) {
-          sum += n;
-        }
+      ranges.push([start, end]);
+    }
+
+    // For each range, generate invalids directly
+    let sum = 0;
+    for (const [start, end] of ranges) {
+      const invalids = generateInvalids(start, end);
+      for (const n of invalids) {
+        sum += n;
       }
     }
 
