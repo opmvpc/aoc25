@@ -10,19 +10,45 @@ int main(void) {
     char* input = aoc_read_input();
 
     AOC_TIMER_START(parse);
-    // Parse input
-    int line_count = 0;
-    char** lines = aoc_split_lines(input, &line_count);
+    // Manual parsing: input lines are <L|R><distance>
+    char* ptr = input;
     AOC_TIMER_END(parse);
 
     AOC_TIMER_START(solve);
-    // TODO: Implement solution
-    long long result = 0;
+    int position = 50;
+    int hits = 0;
+
+    while (*ptr) {
+        char dir = *ptr++; // 'L' or 'R'
+        int value = 0;
+
+        // Parse distance
+        while (*ptr >= '0' && *ptr <= '9') {
+            value = value * 10 + (*ptr - '0');
+            ptr++;
+        }
+
+        // Skip newline characters (\r?\n)
+        if (*ptr == '\r') ptr++;
+        if (*ptr == '\n') ptr++;
+
+        const int step = value % 100; // dial size
+        if (dir == 'L') {
+            position -= step;
+            if (position < 0) position += 100;
+        } else { // 'R'
+            position += step;
+            if (position >= 100) position -= 100;
+        }
+
+        if (position == 0) hits++;
+    }
+
+    long long result = hits;
     AOC_TIMER_END(solve);
 
     AOC_RESULT_INT(result);
 
-    free(lines);
     aoc_cleanup(input);
     return 0;
 }

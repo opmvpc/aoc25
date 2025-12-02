@@ -81,7 +81,9 @@ export class AocDatabase {
   }
 
   getDay(id: number): Day | undefined {
-    return this.db.prepare("SELECT * FROM days WHERE id = ?").get(id) as Day | undefined;
+    return this.db.prepare("SELECT * FROM days WHERE id = ?").get(id) as
+      | Day
+      | undefined;
   }
 
   updateDay(id: number, data: UpdateDayInput): void {
@@ -98,16 +100,22 @@ export class AocDatabase {
     if (fields.length === 0) return;
 
     values.push(id);
-    this.db.prepare(`UPDATE days SET ${fields.join(", ")} WHERE id = ?`).run(...values);
+    this.db
+      .prepare(`UPDATE days SET ${fields.join(", ")} WHERE id = ?`)
+      .run(...values);
   }
 
   setDayAnswer(id: number, part: 1 | 2, answer: string): void {
     const column = part === 1 ? "answer_p1" : "answer_p2";
-    this.db.prepare(`UPDATE days SET ${column} = ? WHERE id = ?`).run(answer, id);
+    this.db
+      .prepare(`UPDATE days SET ${column} = ? WHERE id = ?`)
+      .run(answer, id);
   }
 
   publishDay(id: number): void {
-    this.db.prepare("UPDATE days SET published_at = CURRENT_TIMESTAMP WHERE id = ?").run(id);
+    this.db
+      .prepare("UPDATE days SET published_at = CURRENT_TIMESTAMP WHERE id = ?")
+      .run(id);
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -115,38 +123,44 @@ export class AocDatabase {
   // ═══════════════════════════════════════════════════════════════
 
   createRun(input: CreateRunInput): number {
-    const result = this.db.prepare(`
+    const result = this.db
+      .prepare(
+        `
       INSERT INTO runs (agent, day, part, language, answer, time_ms, is_correct, is_sample, error)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      input.agent,
-      input.day,
-      input.part,
-      input.language,
-      input.answer ?? null,
-      input.time_ms,
-      input.is_correct === undefined ? null : input.is_correct ? 1 : 0,
-      input.is_sample ? 1 : 0,
-      input.error ?? null
-    );
+    `
+      )
+      .run(
+        input.agent,
+        input.day,
+        input.part,
+        input.language,
+        input.answer ?? null,
+        input.time_ms,
+        input.is_correct === undefined ? null : input.is_correct ? 1 : 0,
+        input.is_sample ? 1 : 0,
+        input.error ?? null
+      );
 
     return Number(result.lastInsertRowid);
   }
 
   getRun(id: number): Run | undefined {
-    const row = this.db.prepare("SELECT * FROM runs WHERE id = ?").get(id) as {
-      id: number;
-      agent: string;
-      day: number;
-      part: number;
-      language: string;
-      answer: string | null;
-      time_ms: number;
-      is_correct: number | null;
-      is_sample: number;
-      error: string | null;
-      created_at: string;
-    } | undefined;
+    const row = this.db.prepare("SELECT * FROM runs WHERE id = ?").get(id) as
+      | {
+          id: number;
+          agent: string;
+          day: number;
+          part: number;
+          language: string;
+          answer: string | null;
+          time_ms: number;
+          is_correct: number | null;
+          is_sample: number;
+          error: string | null;
+          created_at: string;
+        }
+      | undefined;
 
     if (!row) return undefined;
 
@@ -161,9 +175,13 @@ export class AocDatabase {
   }
 
   getRunsForDay(day: number): Run[] {
-    const rows = this.db.prepare(`
+    const rows = this.db
+      .prepare(
+        `
       SELECT * FROM runs WHERE day = ? ORDER BY created_at DESC
-    `).all(day) as Array<{
+    `
+      )
+      .all(day) as Array<{
       id: number;
       agent: string;
       day: number;
@@ -188,9 +206,13 @@ export class AocDatabase {
   }
 
   getLatestRuns(limit = 50): Run[] {
-    const rows = this.db.prepare(`
+    const rows = this.db
+      .prepare(
+        `
       SELECT * FROM runs ORDER BY created_at DESC LIMIT ?
-    `).all(limit) as Array<{
+    `
+      )
+      .all(limit) as Array<{
       id: number;
       agent: string;
       day: number;
@@ -221,28 +243,32 @@ export class AocDatabase {
   createBenchmark(input: CreateBenchmarkInput): number {
     const stats = computeStats(input.times);
 
-    const result = this.db.prepare(`
+    const result = this.db
+      .prepare(
+        `
       INSERT INTO benchmark_sessions (
         agent, day, part, language, num_runs, answer, is_correct,
         avg_time_ms, min_time_ms, max_time_ms, std_dev_ms,
         p50_time_ms, p95_time_ms, p99_time_ms
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(
-      input.agent,
-      input.day,
-      input.part,
-      input.language,
-      input.num_runs,
-      input.answer ?? null,
-      input.is_correct === undefined ? null : input.is_correct ? 1 : 0,
-      stats.avg,
-      stats.min,
-      stats.max,
-      stats.stdDev,
-      stats.p50,
-      stats.p95,
-      stats.p99
-    );
+    `
+      )
+      .run(
+        input.agent,
+        input.day,
+        input.part,
+        input.language,
+        input.num_runs,
+        input.answer ?? null,
+        input.is_correct === undefined ? null : input.is_correct ? 1 : 0,
+        stats.avg,
+        stats.min,
+        stats.max,
+        stats.stdDev,
+        stats.p50,
+        stats.p95,
+        stats.p99
+      );
 
     const sessionId = Number(result.lastInsertRowid);
 
@@ -264,24 +290,28 @@ export class AocDatabase {
   }
 
   getBenchmarkSession(id: number): BenchmarkSession | undefined {
-    const row = this.db.prepare("SELECT * FROM benchmark_sessions WHERE id = ?").get(id) as {
-      id: number;
-      agent: string;
-      day: number;
-      part: number;
-      language: string;
-      num_runs: number;
-      answer: string | null;
-      is_correct: number | null;
-      avg_time_ms: number | null;
-      min_time_ms: number | null;
-      max_time_ms: number | null;
-      std_dev_ms: number | null;
-      p50_time_ms: number | null;
-      p95_time_ms: number | null;
-      p99_time_ms: number | null;
-      created_at: string;
-    } | undefined;
+    const row = this.db
+      .prepare("SELECT * FROM benchmark_sessions WHERE id = ?")
+      .get(id) as
+      | {
+          id: number;
+          agent: string;
+          day: number;
+          part: number;
+          language: string;
+          num_runs: number;
+          answer: string | null;
+          is_correct: number | null;
+          avg_time_ms: number | null;
+          min_time_ms: number | null;
+          max_time_ms: number | null;
+          std_dev_ms: number | null;
+          p50_time_ms: number | null;
+          p95_time_ms: number | null;
+          p99_time_ms: number | null;
+          created_at: string;
+        }
+      | undefined;
 
     if (!row) return undefined;
 
@@ -295,15 +325,23 @@ export class AocDatabase {
   }
 
   getBenchmarkRuns(sessionId: number): BenchmarkRun[] {
-    return this.db.prepare(`
+    return this.db
+      .prepare(
+        `
       SELECT * FROM benchmark_runs WHERE session_id = ? ORDER BY run_index
-    `).all(sessionId) as BenchmarkRun[];
+    `
+      )
+      .all(sessionId) as BenchmarkRun[];
   }
 
   getLatestBenchmarks(limit = 20): BenchmarkSession[] {
-    const rows = this.db.prepare(`
-      SELECT * FROM benchmark_sessions ORDER BY created_at DESC LIMIT ?
-    `).all(limit) as Array<{
+    const rows = this.db
+      .prepare(
+        `
+      SELECT * FROM benchmark_sessions ORDER BY created_at DESC, id DESC LIMIT ?
+    `
+      )
+      .all(limit) as Array<{
       id: number;
       agent: string;
       day: number;
@@ -332,9 +370,13 @@ export class AocDatabase {
   }
 
   getBenchmarksForDay(day: number): BenchmarkSession[] {
-    const rows = this.db.prepare(`
+    const rows = this.db
+      .prepare(
+        `
       SELECT * FROM benchmark_sessions WHERE day = ? ORDER BY created_at DESC
-    `).all(day) as Array<{
+    `
+      )
+      .all(day) as Array<{
       id: number;
       agent: string;
       day: number;

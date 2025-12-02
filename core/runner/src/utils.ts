@@ -7,11 +7,27 @@ import { join, resolve } from "node:path";
 import type { Agent } from "./types.js";
 
 /**
- * Détecte l'agent depuis le répertoire courant
- * Le runner est dans agents/XXX/tools/runner/
- * Donc on remonte de 2 niveaux pour trouver le nom de l'agent
+ * Détecte l'agent depuis le répertoire courant ou la variable d'environnement
+ * La variable AOC_AGENT_DIR est définie par le wrapper shell
+ * Sinon, on essaie de détecter depuis le CWD
  */
-export function detectAgent(cwd: string): { agent: Agent; agentDir: string } | null {
+export function detectAgent(
+  cwd: string
+): { agent: Agent; agentDir: string } | null {
+  // Check environment variable first (set by the wrapper)
+  const envAgentDir = process.env.AOC_AGENT_DIR;
+  if (envAgentDir) {
+    const parts = envAgentDir.split(/[/\\]/);
+    const agentName = parts[parts.length - 1];
+    if (["claude", "codex", "gemini"].includes(agentName!)) {
+      return {
+        agent: agentName as Agent,
+        agentDir: envAgentDir,
+      };
+    }
+  }
+
+  // Fallback: detect from CWD
   const normalized = resolve(cwd);
 
   // Check if we're in an agent directory

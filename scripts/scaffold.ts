@@ -13,7 +13,7 @@ import { existsSync } from "node:fs";
 
 const ROOT = process.cwd();
 const DAYS = 12;
-const AGENTS = ["claude", "codex", "gemini"] as const;
+const AGENTS = ["claude", "AGENTS", "gemini"] as const;
 type Agent = (typeof AGENTS)[number];
 
 // ═══════════════════════════════════════════════════════════════

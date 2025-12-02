@@ -17,14 +17,19 @@
     "sync-tools": "tsx scripts/sync-tools.ts",
     "setup": "npm run scaffold && npm install && npm run sync-tools && npm run init-db && npm run publish-day -- 0",
     "dev": "npm run dev -w core/dashboard",
-    "build": "npm run build -w core/runner && npm run build -w core/dashboard"
+    "build": "npm run build -w core/runner && npm run build -w core/dashboard",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
+    "@vitest/coverage-v8": "^4.0.15",
     "tsx": "^4.7.0",
-    "typescript": "^5.3.0"
+    "typescript": "^5.3.0",
+    "vitest": "^4.0.15"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=24.0.0"
   }
 }

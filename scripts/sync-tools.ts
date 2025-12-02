@@ -97,10 +97,19 @@ async function syncToAgent(agent: string): Promise<void> {
   console.log(`  ✅ C common header synced`);
 
   // Create shell wrapper (Unix)
+  // On exécute depuis le dossier de l'agent, mais on utilise le runner
+  // du monorepo pour avoir accès aux node_modules
   const shellWrapper = `#!/bin/bash
 # AoC 2025 Runner Wrapper
 SCRIPT_DIR="$(cd "$(dirname "\${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR/.." && npx tsx "$SCRIPT_DIR/runner/dist/cli.js" "$@"
+AGENT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+ROOT_DIR="$(cd "$AGENT_DIR/../.." && pwd)"
+
+# Export agent dir for the runner to detect
+export AOC_AGENT_DIR="$AGENT_DIR"
+
+# Run from root where node_modules exists
+cd "$ROOT_DIR" && npx tsx "$ROOT_DIR/core/runner/dist/cli.js" "$@"
 `;
   await writeFile(join(toolsDir, "aoc"), shellWrapper);
 

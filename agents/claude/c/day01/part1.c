@@ -16,8 +16,23 @@ int main(void) {
     AOC_TIMER_END(parse);
 
     AOC_TIMER_START(solve);
-    // TODO: Implement solution
+    int position = 50;
     long long result = 0;
+
+    for (int i = 0; i < line_count; i++) {
+        char direction = lines[i][0];
+        int distance = atoi(&lines[i][1]);
+
+        if (direction == 'L') {
+            position = ((position - distance) % 100 + 100) % 100;
+        } else {
+            position = (position + distance) % 100;
+        }
+
+        if (position == 0) {
+            result++;
+        }
+    }
     AOC_TIMER_END(solve);
 
     AOC_RESULT_INT(result);

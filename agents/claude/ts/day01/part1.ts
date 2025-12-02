@@ -9,8 +9,24 @@ export const solver: ISolver = {
   solve(input: string): string {
     const lines = input.trim().split("\n");
 
-    // TODO: Implement solution
+    let position = 50;
+    let count = 0;
 
-    return "NOT_IMPLEMENTED";
+    for (const line of lines) {
+      const direction = line[0];
+      const distance = parseInt(line.slice(1));
+
+      if (direction === "L") {
+        position = ((position - distance) % 100 + 100) % 100;
+      } else {
+        position = (position + distance) % 100;
+      }
+
+      if (position === 0) {
+        count++;
+      }
+    }
+
+    return count.toString();
   },
 };
