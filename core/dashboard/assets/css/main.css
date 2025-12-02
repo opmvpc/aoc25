@@ -16,7 +16,7 @@
   --color-primary-800: #854d0e;
   --color-primary-900: #713f12;
   --color-primary-950: #422006;
-  
+
   /* AoC Brand Colors */
   --color-aoc-gold: #ffcc00;
   --color-aoc-silver: #9999cc;
@@ -33,7 +33,7 @@
   --color-glass-dark: rgba(15, 15, 35, 0.8);
   --color-glass-light: rgba(255, 255, 255, 0.05);
   --color-glass-border: rgba(255, 255, 255, 0.1);
-  
+
   /* Backgrounds */
   --color-bg-dark: #0a0a1a;
   --color-bg-card: rgba(16, 16, 26, 0.9);
@@ -60,13 +60,16 @@ body::before {
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: 
-    radial-gradient(2px 2px at 20px 30px, #fff, transparent),
-    radial-gradient(2px 2px at 40px 70px, rgba(255,204,0,0.8), transparent),
+  background-image: radial-gradient(2px 2px at 20px 30px, #fff, transparent),
+    radial-gradient(2px 2px at 40px 70px, rgba(255, 204, 0, 0.8), transparent),
     radial-gradient(1px 1px at 90px 40px, #fff, transparent),
-    radial-gradient(2px 2px at 160px 120px, rgba(153,153,204,0.8), transparent),
+    radial-gradient(
+      2px 2px at 160px 120px,
+      rgba(153, 153, 204, 0.8),
+      transparent
+    ),
     radial-gradient(1px 1px at 230px 80px, #fff, transparent),
-    radial-gradient(2px 2px at 300px 150px, rgba(0,204,0,0.6), transparent);
+    radial-gradient(2px 2px at 300px 150px, rgba(0, 204, 0, 0.6), transparent);
   background-size: 350px 200px;
   animation: stars 150s linear infinite;
   pointer-events: none;
@@ -75,8 +78,12 @@ body::before {
 }
 
 @keyframes stars {
-  from { transform: translateY(0); }
-  to { transform: translateY(-200px); }
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-200px);
+  }
 }
 
 /* Custom scrollbar */
@@ -91,7 +98,11 @@ body::before {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--color-aoc-gold), var(--color-aoc-green));
+  background: linear-gradient(
+    180deg,
+    var(--color-aoc-gold),
+    var(--color-aoc-green)
+  );
   border-radius: 5px;
 }
 
@@ -106,8 +117,7 @@ body::before {
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.4),
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
@@ -121,7 +131,11 @@ body::before {
 
 /* Agent cards with gradient borders */
 .agent-card-claude {
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(249, 115, 22, 0.02));
+  background: linear-gradient(
+    135deg,
+    rgba(249, 115, 22, 0.1),
+    rgba(249, 115, 22, 0.02)
+  );
   border: 2px solid transparent;
   background-clip: padding-box;
   position: relative;
@@ -140,7 +154,11 @@ body::before {
 }
 
 .agent-card-codex {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.02));
+  background: linear-gradient(
+    135deg,
+    rgba(34, 197, 94, 0.1),
+    rgba(34, 197, 94, 0.02)
+  );
   border: 2px solid transparent;
   position: relative;
 }
@@ -158,7 +176,11 @@ body::before {
 }
 
 .agent-card-gemini {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(168, 85, 247, 0.02));
+  background: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.1),
+    rgba(168, 85, 247, 0.02)
+  );
   border: 2px solid transparent;
   position: relative;
 }
@@ -177,21 +199,33 @@ body::before {
 
 /* Agent badges */
 .agent-claude {
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.3), rgba(249, 115, 22, 0.1));
+  background: linear-gradient(
+    135deg,
+    rgba(249, 115, 22, 0.3),
+    rgba(249, 115, 22, 0.1)
+  );
   border: 1px solid var(--color-claude);
   color: var(--color-claude);
   text-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
 }
 
 .agent-codex {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(34, 197, 94, 0.1));
+  background: linear-gradient(
+    135deg,
+    rgba(34, 197, 94, 0.3),
+    rgba(34, 197, 94, 0.1)
+  );
   border: 1px solid var(--color-codex);
   color: var(--color-codex);
   text-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
 }
 
 .agent-gemini {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(168, 85, 247, 0.1));
+  background: linear-gradient(
+    135deg,
+    rgba(168, 85, 247, 0.3),
+    rgba(168, 85, 247, 0.1)
+  );
   border: 1px solid var(--color-gemini);
   color: var(--color-gemini);
   text-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
@@ -199,21 +233,32 @@ body::before {
 
 /* Podium styles */
 .podium-1 {
-  background: linear-gradient(135deg, rgba(255, 204, 0, 0.2), rgba(255, 204, 0, 0.05));
+  background: linear-gradient(
+    135deg,
+    rgba(255, 204, 0, 0.2),
+    rgba(255, 204, 0, 0.05)
+  );
   border: 2px solid var(--color-aoc-gold);
-  box-shadow: 
-    0 0 30px rgba(255, 204, 0, 0.3),
+  box-shadow: 0 0 30px rgba(255, 204, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .podium-2 {
-  background: linear-gradient(135deg, rgba(192, 192, 192, 0.15), rgba(192, 192, 192, 0.03));
+  background: linear-gradient(
+    135deg,
+    rgba(192, 192, 192, 0.15),
+    rgba(192, 192, 192, 0.03)
+  );
   border: 2px solid #c0c0c0;
   box-shadow: 0 0 20px rgba(192, 192, 192, 0.2);
 }
 
 .podium-3 {
-  background: linear-gradient(135deg, rgba(205, 127, 50, 0.15), rgba(205, 127, 50, 0.03));
+  background: linear-gradient(
+    135deg,
+    rgba(205, 127, 50, 0.15),
+    rgba(205, 127, 50, 0.03)
+  );
   border: 2px solid #cd7f32;
   box-shadow: 0 0 20px rgba(205, 127, 50, 0.2);
 }
@@ -277,7 +322,12 @@ body::before {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
   transition: 0.5s;
 }
 
@@ -287,11 +337,12 @@ body::before {
 
 /* Pulse animation */
 @keyframes pulse-glow {
-  0%, 100% { 
+  0%,
+  100% {
     box-shadow: 0 0 5px currentColor;
     opacity: 1;
   }
-  50% { 
+  50% {
     box-shadow: 0 0 25px currentColor;
     opacity: 0.8;
   }
@@ -303,10 +354,11 @@ body::before {
 
 /* Winner highlight */
 @keyframes winner-glow {
-  0%, 100% { 
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(255, 204, 0, 0.4);
   }
-  50% { 
+  50% {
     box-shadow: 0 0 40px rgba(255, 204, 0, 0.6);
   }
 }
@@ -317,10 +369,18 @@ body::before {
 
 /* Racing animation */
 @keyframes race-flag {
-  0% { transform: rotate(0deg); }
-  25% { transform: rotate(5deg); }
-  75% { transform: rotate(-5deg); }
-  100% { transform: rotate(0deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(5deg);
+  }
+  75% {
+    transform: rotate(-5deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
 }
 
 .race-flag {
@@ -338,12 +398,26 @@ body::before {
 }
 
 /* Rank indicators */
-.rank-1 { color: #ffd700; }
-.rank-2 { color: #c0c0c0; }
-.rank-3 { color: #cd7f32; }
+.rank-1 {
+  color: #ffd700;
+}
+.rank-2 {
+  color: #c0c0c0;
+}
+.rank-3 {
+  color: #cd7f32;
+}
 
 /* Status colors */
-.status-success { color: var(--color-aoc-green); }
-.status-error { color: var(--color-aoc-red); }
-.status-pending { color: var(--color-aoc-silver); }
-.status-none { color: rgba(255, 255, 255, 0.2); }
+.status-success {
+  color: var(--color-aoc-green);
+}
+.status-error {
+  color: var(--color-aoc-red);
+}
+.status-pending {
+  color: var(--color-aoc-silver);
+}
+.status-none {
+  color: rgba(255, 255, 255, 0.2);
+}

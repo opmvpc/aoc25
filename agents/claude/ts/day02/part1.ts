@@ -5,61 +5,73 @@
 
 import type { ISolver } from "../../tools/runner/types.js";
 
-function isInvalidID(n: number): boolean {
-  const s = n.toString();
-  const len = s.length;
+function generateInvalids(start: number, end: number): Set<number> {
+  const invalids = new Set<number>();
+  const startLen = start.toString().length;
+  const endLen = end.toString().length;
 
-  // Must be even length to be repeatable
-  if (len % 2 !== 0) return false;
+  // For each possible total length (must be even)
+  for (let totalLen = startLen; totalLen <= endLen; totalLen++) {
+    if (totalLen % 2 !== 0) continue; // Must be even
 
-  const half = len / 2;
-  const firstHalf = s.slice(0, half);
-  const secondHalf = s.slice(half);
+    const patternLen = totalLen / 2;
+    const minPattern = Math.pow(10, patternLen - 1);
+    const maxPattern = Math.pow(10, patternLen) - 1;
 
-  // Check if first half has leading zero (not allowed)
-  if (firstHalf[0] === '0') return false;
+    for (let pattern = minPattern; pattern <= maxPattern; pattern++) {
+      // Build repeated number (pattern twice)
+      const repeated = pattern * (Math.pow(10, patternLen) + 1);
 
-  return firstHalf === secondHalf;
+      // Check if in range
+      if (repeated >= start && repeated <= end) {
+        invalids.add(repeated);
+      } else if (repeated > end) {
+        break;
+      }
+    }
+  }
+
+  return invalids;
 }
 
 export const solver: ISolver = {
   solve(input: string): string {
     const text = input.trim();
 
-    let sum = 0;
+    // Parse all ranges
+    const ranges: [number, number][] = [];
     let i = 0;
 
-    // Manual parsing for performance
     while (i < text.length) {
-      // Skip whitespace and commas
       while (i < text.length && (text[i] === ',' || text[i] === ' ' || text[i] === '\n')) {
         i++;
       }
 
       if (i >= text.length) break;
 
-      // Parse start number
       let start = 0;
       while (i < text.length && text[i] >= '0' && text[i] <= '9') {
         start = start * 10 + (text.charCodeAt(i) - 48);
         i++;
       }
 
-      // Skip dash
       if (i < text.length && text[i] === '-') i++;
 
-      // Parse end number
       let end = 0;
       while (i < text.length && text[i] >= '0' && text[i] <= '9') {
         end = end * 10 + (text.charCodeAt(i) - 48);
         i++;
       }
 
-      // Check all numbers in range
-      for (let n = start; n <= end; n++) {
-        if (isInvalidID(n)) {
-          sum += n;
-        }
+      ranges.push([start, end]);
+    }
+
+    // For each range, generate invalids directly
+    let sum = 0;
+    for (const [start, end] of ranges) {
+      const invalids = generateInvalids(start, end);
+      for (const n of invalids.values()) {
+        sum += n;
       }
     }
 

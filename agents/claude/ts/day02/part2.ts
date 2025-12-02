@@ -5,8 +5,8 @@
 
 import type { ISolver } from "../../tools/runner/types.js";
 
-function generateInvalids(start: number, end: number): number[] {
-  const invalids: number[] = [];
+function generateInvalids(start: number, end: number): Set<number> {
+  const invalids = new Set<number>();
   const startLen = start.toString().length;
   const endLen = end.toString().length;
 
@@ -34,7 +34,7 @@ function generateInvalids(start: number, end: number): number[] {
 
         // Check if in range
         if (repeated >= start && repeated <= end) {
-          invalids.push(repeated);
+          invalids.add(repeated);
         } else if (repeated > end) {
           break; // No point continuing
         }
@@ -81,7 +81,7 @@ export const solver: ISolver = {
     let sum = 0;
     for (const [start, end] of ranges) {
       const invalids = generateInvalids(start, end);
-      for (const n of invalids) {
+      for (const n of invalids.values()) {
         sum += n;
       }
     }
