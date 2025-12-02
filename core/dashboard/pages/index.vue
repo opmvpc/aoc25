@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import type { DayWithRuns, Agent, Language } from "~/types";
 
-const { data: days, pending, error, refresh } = await useFetch<DayWithRuns[]>("/api/days");
+const {
+  data: days,
+  pending,
+  error,
+  refresh,
+} = await useFetch<DayWithRuns[]>("/api/days");
 
 const agents: Agent[] = ["claude", "codex", "gemini"];
 const languages: Language[] = ["ts", "c"];
@@ -29,110 +34,155 @@ const currentResults = ref<{
 // Pre-compute status grid
 const statusGrid = computed(() => {
   if (!days.value) return new Map();
-  
-  const grid = new Map<string, { 
-    status: string; 
-    time: string | null;
-    answer: string | null;
-    isCorrect: boolean | null;
-  }>();
-  
+
+  const grid = new Map<
+    string,
+    {
+      status: string;
+      time: string | null;
+      answer: string | null;
+      isCorrect: boolean | null;
+    }
+  >();
+
   for (const day of days.value) {
     for (const agent of agents) {
       for (const lang of languages) {
         for (const part of [1, 2] as const) {
           const key = `${day.id}-${agent}-${lang}-${part}`;
           const run = day.latestRuns?.[agent]?.[lang]?.[`part${part}`];
-          
+
           let status = "none";
           let time: string | null = null;
           let answer: string | null = null;
           let isCorrect: boolean | null = null;
-          
+
           if (run) {
             isCorrect = run.is_correct;
             answer = run.answer ?? null;
             if (run.is_correct === true) status = "success";
             else if (run.is_correct === false) status = "error";
             else status = "pending";
-            
+
             const ms = run.time_ms;
             if (ms < 1) time = `${(ms * 1000).toFixed(0)}µs`;
             else if (ms < 1000) time = `${ms.toFixed(1)}ms`;
             else time = `${(ms / 1000).toFixed(2)}s`;
           }
-          
+
           grid.set(key, { status, time, answer, isCorrect });
         }
       }
     }
   }
-  
+
   return grid;
 });
 
-function getStatus(dayId: number, agent: Agent, lang: Language, part: 1 | 2): string {
-  return statusGrid.value.get(`${dayId}-${agent}-${lang}-${part}`)?.status || "none";
+function getStatus(
+  dayId: number,
+  agent: Agent,
+  lang: Language,
+  part: 1 | 2
+): string {
+  return (
+    statusGrid.value.get(`${dayId}-${agent}-${lang}-${part}`)?.status || "none"
+  );
 }
 
-function getTime(dayId: number, agent: Agent, lang: Language, part: 1 | 2): string | null {
-  return statusGrid.value.get(`${dayId}-${agent}-${lang}-${part}`)?.time || null;
+function getTime(
+  dayId: number,
+  agent: Agent,
+  lang: Language,
+  part: 1 | 2
+): string | null {
+  return (
+    statusGrid.value.get(`${dayId}-${agent}-${lang}-${part}`)?.time || null
+  );
 }
 
-function getAnswer(dayId: number, agent: Agent, lang: Language, part: 1 | 2): string | null {
-  return statusGrid.value.get(`${dayId}-${agent}-${lang}-${part}`)?.answer || null;
+function getAnswer(
+  dayId: number,
+  agent: Agent,
+  lang: Language,
+  part: 1 | 2
+): string | null {
+  return (
+    statusGrid.value.get(`${dayId}-${agent}-${lang}-${part}`)?.answer || null
+  );
 }
 
-function getIsCorrect(dayId: number, agent: Agent, lang: Language, part: 1 | 2): boolean | null {
-  return statusGrid.value.get(`${dayId}-${agent}-${lang}-${part}`)?.isCorrect ?? null;
+function getIsCorrect(
+  dayId: number,
+  agent: Agent,
+  lang: Language,
+  part: 1 | 2
+): boolean | null {
+  return (
+    statusGrid.value.get(`${dayId}-${agent}-${lang}-${part}`)?.isCorrect ?? null
+  );
 }
 
 // Day stats
 const dayStats = computed(() => {
   if (!days.value) return new Map();
-  
-  const stats = new Map<number, { gold: number; silver: number; total: number }>();
-  
+
+  const stats = new Map<
+    number,
+    { gold: number; silver: number; total: number }
+  >();
+
   for (const day of days.value) {
-    let gold = 0, silver = 0;
-    
+    let gold = 0,
+      silver = 0;
+
     for (const agent of agents) {
       for (const lang of languages) {
         if (getStatus(day.id, agent, lang, 1) === "success") gold++;
         if (getStatus(day.id, agent, lang, 2) === "success") silver++;
       }
     }
-    
+
     stats.set(day.id, { gold, silver, total: gold + silver });
   }
-  
+
   return stats;
 });
 
 // Agent leaderboard
 const agentLeaderboard = computed(() => {
-  const scores: Record<Agent, { gold: number; silver: number; total: number; errors: number }> = {
+  const scores: Record<
+    Agent,
+    { gold: number; silver: number; total: number; errors: number }
+  > = {
     claude: { gold: 0, silver: 0, total: 0, errors: 0 },
     codex: { gold: 0, silver: 0, total: 0, errors: 0 },
     gemini: { gold: 0, silver: 0, total: 0, errors: 0 },
   };
-  
-  if (!days.value) return Object.entries(scores).sort((a, b) => b[1].total - a[1].total);
-  
+
+  if (!days.value)
+    return Object.entries(scores).sort((a, b) => b[1].total - a[1].total);
+
   for (const day of days.value) {
     for (const agent of agents) {
       for (const lang of languages) {
         const s1 = getStatus(day.id, agent, lang, 1);
         const s2 = getStatus(day.id, agent, lang, 2);
-        
-        if (s1 === "success") { scores[agent].gold++; scores[agent].total++; }
-        if (s2 === "success") { scores[agent].silver++; scores[agent].total++; }
+
+        if (s1 === "success") {
+          scores[agent].gold++;
+          scores[agent].total++;
+        }
+        if (s2 === "success") {
+          scores[agent].silver++;
+          scores[agent].total++;
+        }
         if (s1 === "error") scores[agent].errors++;
         if (s2 === "error") scores[agent].errors++;
       }
     }
   }
-  
+
   return Object.entries(scores).sort((a, b) => b[1].total - a[1].total);
 });
 
@@ -148,7 +198,7 @@ async function runDayBattle(dayId: number, useSample: boolean = false) {
         for (const lang of languages) {
           const key = `${agent}-${dayId}-${part}-${lang}`;
           runningItems.value.add(key);
-          
+
           try {
             const res = await $fetch<{
               answer: string;
@@ -159,7 +209,7 @@ async function runDayBattle(dayId: number, useSample: boolean = false) {
               method: "POST",
               body: { agent, day: dayId, part, language: lang, useSample },
             });
-            
+
             results.results.push({
               agent,
               part,
@@ -187,7 +237,7 @@ async function runDayBattle(dayId: number, useSample: boolean = false) {
         }
       }
     }
-    
+
     await refresh();
     currentResults.value = results;
     showResults.value = true;
@@ -198,10 +248,16 @@ async function runDayBattle(dayId: number, useSample: boolean = false) {
 }
 
 // Run single solver
-async function runSingle(dayId: number, agent: Agent, part: 1 | 2, lang: Language, useSample: boolean = false) {
+async function runSingle(
+  dayId: number,
+  agent: Agent,
+  part: 1 | 2,
+  lang: Language,
+  useSample: boolean = false
+) {
   const key = `${agent}-${dayId}-${part}-${lang}`;
   runningItems.value.add(key);
-  
+
   try {
     await $fetch("/api/runs", {
       method: "POST",
@@ -235,7 +291,9 @@ function closeResults() {
   <div class="space-y-8">
     <!-- Hero Header -->
     <div class="text-center py-4">
-      <h1 class="text-3xl font-bold text-aoc-gold mb-2">🎄 AoC 2025 Battle Royale 🎄</h1>
+      <h1 class="text-3xl font-bold text-aoc-gold mb-2">
+        🎄 AoC 2025 Battle Royale 🎄
+      </h1>
       <p class="text-text-muted">3 AI Agents • 12 Days • 1 Champion</p>
     </div>
 
@@ -243,8 +301,8 @@ function closeResults() {
     <div class="card p-6">
       <h2 class="text-xl font-bold text-aoc-gold mb-4">🏆 Agent Leaderboard</h2>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div 
-          v-for="([agent, score], index) in agentLeaderboard" 
+        <div
+          v-for="([agent, score], index) in agentLeaderboard"
           :key="agent"
           class="p-4 rounded-lg border-2 transition-all"
           :class="{
@@ -254,22 +312,33 @@ function closeResults() {
           }"
         >
           <div class="flex items-center gap-3 mb-3">
-            <span class="text-2xl">{{ index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉' }}</span>
-            <span :class="`agent-${agent}`" class="px-3 py-1 rounded border text-lg font-bold capitalize">
+            <span class="text-2xl">{{
+              index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"
+            }}</span>
+            <span
+              :class="`agent-${agent}`"
+              class="px-3 py-1 rounded border text-lg font-bold capitalize"
+            >
               {{ agent }}
             </span>
           </div>
           <div class="grid grid-cols-3 gap-2 text-center">
             <div>
-              <div class="text-xl font-bold text-aoc-green">{{ score.gold }}</div>
+              <div class="text-xl font-bold text-aoc-green">
+                {{ score.gold }}
+              </div>
               <div class="text-xs text-text-muted">Part 1</div>
             </div>
             <div>
-              <div class="text-xl font-bold text-aoc-gold">{{ score.silver }}</div>
+              <div class="text-xl font-bold text-aoc-gold">
+                {{ score.silver }}
+              </div>
               <div class="text-xs text-text-muted">Part 2</div>
             </div>
             <div>
-              <div class="text-xl font-bold text-aoc-red">{{ score.errors }}</div>
+              <div class="text-xl font-bold text-aoc-red">
+                {{ score.errors }}
+              </div>
               <div class="text-xs text-text-muted">Errors</div>
             </div>
           </div>
@@ -290,7 +359,10 @@ function closeResults() {
     <div v-else-if="error" class="card p-6 text-center text-aoc-red">
       <div class="text-2xl mb-2">❌</div>
       <p>Failed to load: {{ error.message }}</p>
-      <button @click="refresh" class="mt-4 px-4 py-2 bg-bg-hover text-aoc-green rounded hover:bg-bg-card">
+      <button
+        @click="refresh"
+        class="mt-4 px-4 py-2 bg-bg-hover text-aoc-green rounded hover:bg-bg-card"
+      >
         Retry
       </button>
     </div>
@@ -298,10 +370,10 @@ function closeResults() {
     <!-- Days Control Panel -->
     <div v-else class="space-y-4">
       <h2 class="text-xl font-bold text-aoc-gold">📅 Days Control Panel</h2>
-      
+
       <div class="grid gap-4">
-        <div 
-          v-for="day in days" 
+        <div
+          v-for="day in days"
           :key="day.id"
           class="card p-4 hover:border-aoc-green/50 transition-all"
           :class="{ 'ring-2 ring-aoc-gold': runningDay === day.id }"
@@ -309,21 +381,28 @@ function closeResults() {
           <!-- Day Header -->
           <div class="flex items-center justify-between mb-4">
             <div class="flex items-center gap-3">
-              <span class="text-2xl">{{ day.id === 0 ? '🧪' : '🎄' }}</span>
+              <span class="text-2xl">{{ day.id === 0 ? "🧪" : "🎄" }}</span>
               <div>
                 <h3 class="text-lg font-bold text-aoc-green">
-                  Day {{ day.id.toString().padStart(2, '0') }}
-                  <span v-if="day.id === 0" class="text-sm text-text-muted font-normal">(Test)</span>
+                  Day {{ day.id.toString().padStart(2, "0") }}
+                  <span
+                    v-if="day.id === 0"
+                    class="text-sm text-text-muted font-normal"
+                    >(Test)</span
+                  >
                 </h3>
                 <div class="text-sm text-text-muted">
-                  <span v-if="dayStats.get(day.id)?.total" class="text-aoc-gold">
+                  <span
+                    v-if="dayStats.get(day.id)?.total"
+                    class="text-aoc-gold"
+                  >
                     {{ dayStats.get(day.id)?.total }} ★
                   </span>
                   <span v-else class="text-text-muted">No runs yet</span>
                 </div>
               </div>
             </div>
-            
+
             <!-- Action Buttons -->
             <div class="flex gap-2">
               <button
@@ -331,24 +410,30 @@ function closeResults() {
                 :disabled="runningDay !== null"
                 class="px-3 py-2 rounded text-sm font-medium transition-all"
                 :class="{
-                  'bg-aoc-silver/20 text-aoc-silver hover:bg-aoc-silver/30': runningDay !== day.id,
-                  'bg-aoc-gold/20 text-aoc-gold animate-pulse': runningDay === day.id,
-                  'opacity-50 cursor-not-allowed': runningDay !== null && runningDay !== day.id,
+                  'bg-aoc-silver/20 text-aoc-silver hover:bg-aoc-silver/30':
+                    runningDay !== day.id,
+                  'bg-aoc-gold/20 text-aoc-gold animate-pulse':
+                    runningDay === day.id,
+                  'opacity-50 cursor-not-allowed':
+                    runningDay !== null && runningDay !== day.id,
                 }"
               >
-                {{ runningDay === day.id ? '⏳' : '🧪' }} Sample
+                {{ runningDay === day.id ? "⏳" : "🧪" }} Sample
               </button>
               <button
                 @click="runDayBattle(day.id, false)"
                 :disabled="runningDay !== null"
                 class="px-4 py-2 rounded text-sm font-bold transition-all"
                 :class="{
-                  'bg-aoc-green text-bg-main hover:bg-aoc-green/80': runningDay !== day.id,
-                  'bg-aoc-gold text-bg-main animate-pulse': runningDay === day.id,
-                  'opacity-50 cursor-not-allowed': runningDay !== null && runningDay !== day.id,
+                  'bg-aoc-green text-bg-main hover:bg-aoc-green/80':
+                    runningDay !== day.id,
+                  'bg-aoc-gold text-bg-main animate-pulse':
+                    runningDay === day.id,
+                  'opacity-50 cursor-not-allowed':
+                    runningDay !== null && runningDay !== day.id,
                 }"
               >
-                {{ runningDay === day.id ? '⏳ Running...' : '🏆 Run Battle' }}
+                {{ runningDay === day.id ? "⏳ Running..." : "🏆 Run Battle" }}
               </button>
             </div>
           </div>
@@ -366,9 +451,16 @@ function closeResults() {
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="agent in agents" :key="agent" class="border-b border-border/50 hover:bg-bg-hover/30">
+                <tr
+                  v-for="agent in agents"
+                  :key="agent"
+                  class="border-b border-border/50 hover:bg-bg-hover/30"
+                >
                   <td class="py-2 px-2">
-                    <span :class="`agent-${agent}`" class="px-2 py-0.5 rounded border text-xs font-medium capitalize">
+                    <span
+                      :class="`agent-${agent}`"
+                      class="px-2 py-0.5 rounded border text-xs font-medium capitalize"
+                    >
                       {{ agent }}
                     </span>
                   </td>
@@ -380,26 +472,50 @@ function closeResults() {
                           :disabled="runningItems.size > 0"
                           class="inline-flex flex-col items-center gap-0.5 px-2 py-1 rounded hover:bg-bg-hover transition-all min-w-[60px]"
                           :class="{
-                            'opacity-50': runningItems.size > 0 && !isRunning(agent, day.id, part, lang),
+                            'opacity-50':
+                              runningItems.size > 0 &&
+                              !isRunning(agent, day.id, part, lang),
                           }"
                         >
-                          <span 
+                          <span
                             class="text-lg"
                             :class="{
-                              'animate-spin': isRunning(agent, day.id, part, lang),
-                              'text-aoc-green': getStatus(day.id, agent, lang, part) === 'success',
-                              'text-aoc-red': getStatus(day.id, agent, lang, part) === 'error',
-                              'text-aoc-silver': getStatus(day.id, agent, lang, part) === 'pending',
-                              'text-text-muted/30': getStatus(day.id, agent, lang, part) === 'none',
+                              'animate-spin': isRunning(
+                                agent,
+                                day.id,
+                                part,
+                                lang
+                              ),
+                              'text-aoc-green':
+                                getStatus(day.id, agent, lang, part) ===
+                                'success',
+                              'text-aoc-red':
+                                getStatus(day.id, agent, lang, part) ===
+                                'error',
+                              'text-aoc-silver':
+                                getStatus(day.id, agent, lang, part) ===
+                                'pending',
+                              'text-text-muted/30':
+                                getStatus(day.id, agent, lang, part) === 'none',
                             }"
                           >
-                            {{ isRunning(agent, day.id, part, lang) ? '⏳' : 
-                               getStatus(day.id, agent, lang, part) === 'success' ? '★' :
-                               getStatus(day.id, agent, lang, part) === 'error' ? '✗' :
-                               getStatus(day.id, agent, lang, part) === 'pending' ? '?' : '·' }}
+                            {{
+                              isRunning(agent, day.id, part, lang)
+                                ? "⏳"
+                                : getStatus(day.id, agent, lang, part) ===
+                                  "success"
+                                ? "★"
+                                : getStatus(day.id, agent, lang, part) ===
+                                  "error"
+                                ? "✗"
+                                : getStatus(day.id, agent, lang, part) ===
+                                  "pending"
+                                ? "?"
+                                : "·"
+                            }}
                           </span>
-                          <span 
-                            v-if="getTime(day.id, agent, lang, part)" 
+                          <span
+                            v-if="getTime(day.id, agent, lang, part)"
                             class="text-[10px] text-text-muted"
                           >
                             {{ getTime(day.id, agent, lang, part) }}
@@ -418,19 +534,29 @@ function closeResults() {
 
     <!-- Results Modal -->
     <Teleport to="body">
-      <div 
-        v-if="showResults && currentResults" 
+      <div
+        v-if="showResults && currentResults"
         class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
         @click.self="closeResults"
       >
-        <div class="bg-bg-card border border-border rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
-          <div class="p-4 border-b border-border flex items-center justify-between">
+        <div
+          class="bg-bg-card border border-border rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden"
+        >
+          <div
+            class="p-4 border-b border-border flex items-center justify-between"
+          >
             <h2 class="text-xl font-bold text-aoc-gold">
-              🏆 Day {{ currentResults.day.toString().padStart(2, '0') }} Battle Results
+              🏆 Day {{ currentResults.day.toString().padStart(2, "0") }} Battle
+              Results
             </h2>
-            <button @click="closeResults" class="text-text-muted hover:text-white text-2xl">&times;</button>
+            <button
+              @click="closeResults"
+              class="text-text-muted hover:text-white text-2xl"
+            >
+              &times;
+            </button>
           </div>
-          
+
           <div class="p-4 overflow-auto max-h-[calc(90vh-80px)]">
             <table class="w-full text-sm">
               <thead class="sticky top-0 bg-bg-card">
@@ -444,8 +570,8 @@ function closeResults() {
                 </tr>
               </thead>
               <tbody>
-                <tr 
-                  v-for="(result, idx) in currentResults.results" 
+                <tr
+                  v-for="(result, idx) in currentResults.results"
                   :key="idx"
                   class="border-b border-border/50 hover:bg-bg-hover/30"
                   :class="{
@@ -454,41 +580,81 @@ function closeResults() {
                   }"
                 >
                   <td class="py-2 px-2">
-                    <span :class="`agent-${result.agent}`" class="px-2 py-0.5 rounded border text-xs capitalize">
+                    <span
+                      :class="`agent-${result.agent}`"
+                      class="px-2 py-0.5 rounded border text-xs capitalize"
+                    >
                       {{ result.agent }}
                     </span>
                   </td>
                   <td class="text-center py-2 px-2">P{{ result.part }}</td>
-                  <td class="text-center py-2 px-2 uppercase text-text-muted">{{ result.language }}</td>
+                  <td class="text-center py-2 px-2 uppercase text-text-muted">
+                    {{ result.language }}
+                  </td>
                   <td class="py-2 px-2 font-mono text-xs">
-                    <span v-if="result.error" class="text-aoc-red">{{ result.error }}</span>
-                    <span v-else class="text-white">{{ result.answer || '-' }}</span>
+                    <span v-if="result.error" class="text-aoc-red">{{
+                      result.error
+                    }}</span>
+                    <span v-else class="text-white">{{
+                      result.answer || "-"
+                    }}</span>
                   </td>
                   <td class="text-center py-2 px-2">
                     <span v-if="result.error" class="text-aoc-red">❌</span>
-                    <span v-else-if="result.isCorrect === true" class="text-aoc-green">✅</span>
-                    <span v-else-if="result.isCorrect === false" class="text-aoc-red">❌</span>
+                    <span
+                      v-else-if="result.isCorrect === true"
+                      class="text-aoc-green"
+                      >✅</span
+                    >
+                    <span
+                      v-else-if="result.isCorrect === false"
+                      class="text-aoc-red"
+                      >❌</span
+                    >
                     <span v-else class="text-aoc-silver">⏳</span>
                   </td>
-                  <td class="text-right py-2 px-2 font-mono text-xs text-text-muted">
-                    {{ result.error ? '-' : formatTime(result.timeMs) }}
+                  <td
+                    class="text-right py-2 px-2 font-mono text-xs text-text-muted"
+                  >
+                    {{ result.error ? "-" : formatTime(result.timeMs) }}
                   </td>
                 </tr>
               </tbody>
             </table>
-            
+
             <!-- Summary -->
-            <div class="mt-4 pt-4 border-t border-border grid grid-cols-3 gap-4 text-center">
-              <div v-for="agent in agents" :key="agent" class="p-3 rounded bg-bg-hover">
-                <span :class="`agent-${agent}`" class="px-2 py-0.5 rounded border text-sm font-bold capitalize">
+            <div
+              class="mt-4 pt-4 border-t border-border grid grid-cols-3 gap-4 text-center"
+            >
+              <div
+                v-for="agent in agents"
+                :key="agent"
+                class="p-3 rounded bg-bg-hover"
+              >
+                <span
+                  :class="`agent-${agent}`"
+                  class="px-2 py-0.5 rounded border text-sm font-bold capitalize"
+                >
                   {{ agent }}
                 </span>
                 <div class="mt-2 flex justify-center gap-3">
                   <span class="text-aoc-green">
-                    {{ currentResults.results.filter(r => r.agent === agent && r.isCorrect === true).length }} ✓
+                    {{
+                      currentResults.results.filter(
+                        (r) => r.agent === agent && r.isCorrect === true
+                      ).length
+                    }}
+                    ✓
                   </span>
                   <span class="text-aoc-red">
-                    {{ currentResults.results.filter(r => r.agent === agent && (r.isCorrect === false || r.error)).length }} ✗
+                    {{
+                      currentResults.results.filter(
+                        (r) =>
+                          r.agent === agent &&
+                          (r.isCorrect === false || r.error)
+                      ).length
+                    }}
+                    ✗
                   </span>
                 </div>
               </div>
@@ -500,13 +666,22 @@ function closeResults() {
 
     <!-- Quick Links -->
     <div class="flex gap-4 justify-center pt-4">
-      <NuxtLink to="/debug" class="px-4 py-2 bg-bg-hover text-aoc-silver rounded hover:bg-bg-card transition-all">
+      <NuxtLink
+        to="/debug"
+        class="px-4 py-2 bg-bg-hover text-aoc-silver rounded hover:bg-bg-card transition-all"
+      >
         🔧 Debug
       </NuxtLink>
-      <NuxtLink to="/benchmarks" class="px-4 py-2 bg-bg-hover text-aoc-gold rounded hover:bg-bg-card transition-all">
+      <NuxtLink
+        to="/benchmarks"
+        class="px-4 py-2 bg-bg-hover text-aoc-gold rounded hover:bg-bg-card transition-all"
+      >
         📊 Benchmarks
       </NuxtLink>
-      <NuxtLink to="/admin" class="px-4 py-2 bg-bg-hover text-aoc-green rounded hover:bg-bg-card transition-all">
+      <NuxtLink
+        to="/admin"
+        class="px-4 py-2 bg-bg-hover text-aoc-green rounded hover:bg-bg-card transition-all"
+      >
         ⚙️ Admin
       </NuxtLink>
     </div>

@@ -37,14 +37,20 @@ async function copyDir(src: string, dest: string): Promise<void> {
 async function updateDatabase(day: number): Promise<void> {
   const dayStr = day.toString().padStart(2, "0");
   const dbPath = join(ROOT, "core", "dashboard", "data", "aoc25.db");
-  
+
   if (!existsSync(dbPath)) {
     console.log("  ⚠️  Database not found, skipping DB update");
     return;
   }
 
   // Read answers.json
-  const answersPath = join(ROOT, "core", "data", `day${dayStr}`, "answers.json");
+  const answersPath = join(
+    ROOT,
+    "core",
+    "data",
+    `day${dayStr}`,
+    "answers.json"
+  );
   let answers = { part1: null, part2: null };
   try {
     const content = await readFile(answersPath, "utf-8");
@@ -54,7 +60,13 @@ async function updateDatabase(day: number): Promise<void> {
   }
 
   // Read sample.expected.json
-  const sampleExpectedPath = join(ROOT, "core", "data", `day${dayStr}`, "sample.expected.json");
+  const sampleExpectedPath = join(
+    ROOT,
+    "core",
+    "data",
+    `day${dayStr}`,
+    "sample.expected.json"
+  );
   let sampleExpected = { part1: null, part2: null };
   try {
     const content = await readFile(sampleExpectedPath, "utf-8");
@@ -66,15 +78,17 @@ async function updateDatabase(day: number): Promise<void> {
   const db = new Database(dbPath);
 
   // Update day with answers and mark as published
-  db.prepare(`
-    UPDATE days SET 
+  db.prepare(
+    `
+    UPDATE days SET
       answer_p1 = ?,
       answer_p2 = ?,
       sample_expected_p1 = ?,
       sample_expected_p2 = ?,
       published_at = COALESCE(published_at, datetime('now'))
     WHERE id = ?
-  `).run(
+  `
+  ).run(
     answers.part1,
     answers.part2,
     sampleExpected.part1,
@@ -87,8 +101,10 @@ async function updateDatabase(day: number): Promise<void> {
   console.log(`  📊 Database updated:`);
   if (answers.part1) console.log(`     Part 1: ${answers.part1}`);
   if (answers.part2) console.log(`     Part 2: ${answers.part2}`);
-  if (sampleExpected.part1) console.log(`     Sample P1: ${sampleExpected.part1}`);
-  if (sampleExpected.part2) console.log(`     Sample P2: ${sampleExpected.part2}`);
+  if (sampleExpected.part1)
+    console.log(`     Sample P1: ${sampleExpected.part1}`);
+  if (sampleExpected.part2)
+    console.log(`     Sample P2: ${sampleExpected.part2}`);
 }
 
 async function publishDay(day: number): Promise<void> {

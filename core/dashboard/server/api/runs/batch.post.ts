@@ -47,7 +47,10 @@ async function executeRunner(
     if (language === "c") args.push("--lang", "c");
 
     const proc = isWindows
-      ? spawn("cmd", ["/c", aocPath, ...args], { cwd: agentDir, env: { ...process.env } })
+      ? spawn("cmd", ["/c", aocPath, ...args], {
+          cwd: agentDir,
+          env: { ...process.env },
+        })
       : spawn(aocPath, args, { cwd: agentDir, env: { ...process.env } });
 
     let stdout = "";
@@ -139,7 +142,10 @@ export default defineEventHandler(async (event) => {
   const body = await readBody<BatchRunRequest>(event);
 
   if (body.day < 0 || body.day > 12) {
-    throw createError({ statusCode: 400, message: "Invalid day (must be 0-12)" });
+    throw createError({
+      statusCode: 400,
+      message: "Invalid day (must be 0-12)",
+    });
   }
 
   const agents = body.agents || ["claude", "codex", "gemini"];
@@ -151,12 +157,16 @@ export default defineEventHandler(async (event) => {
   const db = getDb();
 
   // Get expected answers
-  const dayData = db.prepare("SELECT * FROM days WHERE id = ?").get(body.day) as {
-    answer_p1: string | null;
-    answer_p2: string | null;
-    sample_expected_p1: string | null;
-    sample_expected_p2: string | null;
-  } | undefined;
+  const dayData = db
+    .prepare("SELECT * FROM days WHERE id = ?")
+    .get(body.day) as
+    | {
+        answer_p1: string | null;
+        answer_p2: string | null;
+        sample_expected_p1: string | null;
+        sample_expected_p2: string | null;
+      }
+    | undefined;
 
   // Build list of runs
   const runConfigs: Array<{
@@ -168,7 +178,11 @@ export default defineEventHandler(async (event) => {
   for (const agent of agents) {
     for (const part of parts) {
       for (const language of languages) {
-        runConfigs.push({ agent, part: part as 1 | 2, language: language as "ts" | "c" });
+        runConfigs.push({
+          agent,
+          part: part as 1 | 2,
+          language: language as "ts" | "c",
+        });
       }
     }
   }
@@ -204,9 +218,13 @@ export default defineEventHandler(async (event) => {
       if (dayData && !result.error) {
         let expectedAnswer: string | null = null;
         if (useSample) {
-          expectedAnswer = config.part === 1 ? dayData.sample_expected_p1 : dayData.sample_expected_p2;
+          expectedAnswer =
+            config.part === 1
+              ? dayData.sample_expected_p1
+              : dayData.sample_expected_p2;
         } else {
-          expectedAnswer = config.part === 1 ? dayData.answer_p1 : dayData.answer_p2;
+          expectedAnswer =
+            config.part === 1 ? dayData.answer_p1 : dayData.answer_p2;
         }
 
         if (expectedAnswer !== null) {
@@ -215,10 +233,12 @@ export default defineEventHandler(async (event) => {
       }
 
       // Store in DB
-      db.prepare(`
+      db.prepare(
+        `
         INSERT INTO runs (agent, day, part, language, answer, time_ms, is_correct, is_sample, error)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `).run(
+      `
+      ).run(
         config.agent,
         body.day,
         config.part,

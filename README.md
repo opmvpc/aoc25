@@ -3,16 +3,16 @@
 <div align="center">
 
 ```
-   ___       ______   ___   __ ___  _____ 
-  / _ |___  / ___/ | / / | / / __/ / ___/ 
- / __ / _ \/ /__/  |/ /| |/ /__ \/ __ \  
-/_/ |_\___/\___/_/|___/ |___/____/____/  
-                                         
- ___       __  __  __       ___          __   
-/ _ )___ _/ /_/ /_/ /__    / _ \___  __ ____ _/ /__ 
+   ___       ______   ___   __ ___  _____
+  / _ |___  / ___/ | / / | / / __/ / ___/
+ / __ / _ \/ /__/  |/ /| |/ /__ \/ __ \
+/_/ |_\___/\___/_/|___/ |___/____/____/
+
+ ___       __  __  __       ___          __
+/ _ )___ _/ /_/ /_/ /__    / _ \___  __ ____ _/ /__
 / _  / _ `/ __/ __/ / -_)  / , _/ _ \/ // / _ `/ / -_)
-/____/\_,_/\__/\__/_/\__/  /_/|_|\___/\_, /\_,_/_/\__/ 
-                                     /___/             
+/____/\_,_/\__/\__/_/\__/  /_/|_|\___/\_, /\_,_/_/\__/
+                                     /___/
 ```
 
 **3 AI Agents. 12 Days. 2 Languages. 1 Champion.**
@@ -30,7 +30,7 @@
                    Who's winning?
 ```
 
-*Let the machines fight it out on Advent of Code 2025!*
+_Let the machines fight it out on Advent of Code 2025!_
 
 </div>
 
@@ -38,13 +38,13 @@
 
 ## ⚔️ Les Règles du Combat
 
-| # | Règle | Pourquoi |
-|---|-------|----------|
-| 1 | 🎯 **Même puzzle** | Tous les agents reçoivent l'énoncé au même moment |
-| 2 | 💻 **Double langage** | Solutions TypeScript ET C obligatoires |
-| 3 | ⏱️ **100 benchmarks** | Pour départager les performances |
-| 4 | 🏠 **Sandbox isolé** | Chaque agent dans son dossier, pas de triche ! |
-| 5 | 📊 **Live dashboard** | Scores en temps réel, drama garanti |
+| #   | Règle                 | Pourquoi                                          |
+| --- | --------------------- | ------------------------------------------------- |
+| 1   | 🎯 **Même puzzle**    | Tous les agents reçoivent l'énoncé au même moment |
+| 2   | 💻 **Double langage** | Solutions TypeScript ET C obligatoires            |
+| 3   | ⏱️ **100 benchmarks** | Pour départager les performances                  |
+| 4   | 🏠 **Sandbox isolé**  | Chaque agent dans son dossier, pas de triche !    |
+| 5   | 📊 **Live dashboard** | Scores en temps réel, drama garanti               |
 
 ---
 
@@ -87,10 +87,10 @@ Lance 100 exécutions et calcule les stats (avg, min, max, p50, p95, p99).
 
 ### Options
 
-| Option | Alias | Description |
-|--------|-------|-------------|
-| `--sample` | `-s` | Utilise `sample.txt` au lieu de `input.txt` |
-| `--lang <ts\|c>` | `-l` | Force le langage (défaut: `ts`) |
+| Option           | Alias | Description                                 |
+| ---------------- | ----- | ------------------------------------------- |
+| `--sample`       | `-s`  | Utilise `sample.txt` au lieu de `input.txt` |
+| `--lang <ts\|c>` | `-l`  | Force le langage (défaut: `ts`)             |
 
 ---
 
@@ -119,12 +119,12 @@ export default solve;
 
 int main(void) {
     char* input = aoc_read_input();
-    
+
     AOC_TIMER_START(solve);
     int sum = 0;
     // ... parsing et calcul ...
     AOC_TIMER_END(solve);
-    
+
     AOC_RESULT_INT(sum);
     aoc_cleanup(input);
     return 0;
@@ -164,12 +164,12 @@ Visualise les scores, compare les performances, observe les IA s'affronter en te
 
 ## 🛠️ Scripts Utiles
 
-| Script | Commande | Description |
-|--------|----------|-------------|
+| Script          | Commande                           | Description                           |
+| --------------- | ---------------------------------- | ------------------------------------- |
 | **publish-day** | `npx tsx scripts/publish-day.ts 5` | Publie le jour 5 vers tous les agents |
-| **sync-tools** | `npx tsx scripts/sync-tools.ts` | Re-sync le runner après modifications |
-| **init-db** | `npx tsx scripts/init-db.ts` | Initialise la base de données |
-| **test** | `npm test` | Lance les 156 tests |
+| **sync-tools**  | `npx tsx scripts/sync-tools.ts`    | Re-sync le runner après modifications |
+| **init-db**     | `npx tsx scripts/init-db.ts`       | Initialise la base de données         |
+| **test**        | `npm test`                         | Lance les 156 tests                   |
 
 ---
 

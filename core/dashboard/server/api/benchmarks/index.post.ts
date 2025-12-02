@@ -17,11 +17,18 @@ interface BenchmarkRequest {
 }
 
 // Compile C once, then run multiple times
-async function compileC(agentDir: string, day: number, part: 1 | 2): Promise<string | { error: string }> {
+async function compileC(
+  agentDir: string,
+  day: number,
+  part: 1 | 2
+): Promise<string | { error: string }> {
   const dayStr = day.toString().padStart(2, "0");
   const sourceDir = join(agentDir, "c", `day${dayStr}`);
   const sourcePath = join(sourceDir, `part${part}.c`);
-  const binaryPath = join(sourceDir, `part${part}${process.platform === "win32" ? ".exe" : ""}`);
+  const binaryPath = join(
+    sourceDir,
+    `part${part}${process.platform === "win32" ? ".exe" : ""}`
+  );
 
   return new Promise((resolve) => {
     const proc = spawn("clang", ["-O2", "-o", binaryPath, sourcePath]);
@@ -77,7 +84,10 @@ async function executeSolver(
       const runnerCode = `
 import { pathToFileURL } from 'url';
 import { readFileSync } from 'fs';
-const solver = (await import(pathToFileURL('${solverPath.replace(/\\/g, "/")}').href)).solver;
+const solver = (await import(pathToFileURL('${solverPath.replace(
+        /\\/g,
+        "/"
+      )}').href)).solver;
 const input = readFileSync(0, 'utf-8');
 const start = process.hrtime.bigint();
 const result = solver.solve(input);
@@ -119,7 +129,11 @@ console.log(JSON.stringify({ answer: result, timeNs: Number(end - start) }));
       const totalTimeMs = Number(endTime - startTime) / 1_000_000;
 
       if (code !== 0) {
-        resolve({ answer: "", timeMs: totalTimeMs, error: stderr || `Exit ${code}` });
+        resolve({
+          answer: "",
+          timeMs: totalTimeMs,
+          error: stderr || `Exit ${code}`,
+        });
         return;
       }
 
@@ -142,9 +156,9 @@ console.log(JSON.stringify({ answer: result, timeNs: Number(end - start) }));
 
         // Use internal timing (parse + solve) for accurate measurement
         const internalTimeMs = parseTimeMs + solveTimeMs;
-        resolve({ 
-          answer, 
-          timeMs: internalTimeMs > 0 ? internalTimeMs : totalTimeMs 
+        resolve({
+          answer,
+          timeMs: internalTimeMs > 0 ? internalTimeMs : totalTimeMs,
         });
       } else {
         // Parse TS output
@@ -202,7 +216,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: "Invalid agent" });
   }
   if (body.day < 0 || body.day > 12) {
-    throw createError({ statusCode: 400, message: "Invalid day (must be 0-12)" });
+    throw createError({
+      statusCode: 400,
+      message: "Invalid day (must be 0-12)",
+    });
   }
   if (body.part !== 1 && body.part !== 2) {
     throw createError({ statusCode: 400, message: "Invalid part" });
@@ -221,7 +238,10 @@ export default defineEventHandler(async (event) => {
   const dayStr = body.day.toString().padStart(2, "0");
 
   if (!existsSync(agentDir)) {
-    throw createError({ statusCode: 404, message: "Agent directory not found" });
+    throw createError({
+      statusCode: 404,
+      message: "Agent directory not found",
+    });
   }
 
   // Load input
@@ -268,12 +288,17 @@ export default defineEventHandler(async (event) => {
   }
 
   if (times.length === 0) {
-    throw createError({ statusCode: 500, message: `Benchmark failed: ${lastError || "No runs completed"}` });
+    throw createError({
+      statusCode: 500,
+      message: `Benchmark failed: ${lastError || "No runs completed"}`,
+    });
   }
 
   // Get expected answer
   const db = getDb();
-  const day = db.prepare("SELECT answer_p1, answer_p2 FROM days WHERE id = ?").get(body.day) as {
+  const day = db
+    .prepare("SELECT answer_p1, answer_p2 FROM days WHERE id = ?")
+    .get(body.day) as {
     answer_p1: string | null;
     answer_p2: string | null;
   };
@@ -285,28 +310,32 @@ export default defineEventHandler(async (event) => {
   const stats = computeStats(times);
 
   // Store in database
-  const insertResult = db.prepare(`
+  const insertResult = db
+    .prepare(
+      `
     INSERT INTO benchmark_sessions (
       agent, day, part, language, num_runs, answer, is_correct,
       avg_time_ms, min_time_ms, max_time_ms, std_dev_ms,
       p50_time_ms, p95_time_ms, p99_time_ms
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    body.agent,
-    body.day,
-    body.part,
-    body.language,
-    numRuns,
-    answer,
-    isCorrect === null ? null : isCorrect ? 1 : 0,
-    stats.avg,
-    stats.min,
-    stats.max,
-    stats.stdDev,
-    stats.p50,
-    stats.p95,
-    stats.p99
-  );
+  `
+    )
+    .run(
+      body.agent,
+      body.day,
+      body.part,
+      body.language,
+      numRuns,
+      answer,
+      isCorrect === null ? null : isCorrect ? 1 : 0,
+      stats.avg,
+      stats.min,
+      stats.max,
+      stats.stdDev,
+      stats.p50,
+      stats.p95,
+      stats.p99
+    );
 
   const sessionId = Number(insertResult.lastInsertRowid);
 

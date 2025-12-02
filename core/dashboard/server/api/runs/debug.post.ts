@@ -35,7 +35,14 @@ async function executeRunner(
   part: 1 | 2,
   language: "ts" | "c",
   useSample: boolean
-): Promise<{ stdout: string; stderr: string; exitCode: number | null; timeMs: number; error?: string; command: string }> {
+): Promise<{
+  stdout: string;
+  stderr: string;
+  exitCode: number | null;
+  timeMs: number;
+  error?: string;
+  command: string;
+}> {
   return new Promise((resolve) => {
     const isWindows = process.platform === "win32";
     const aocPath = join(agentDir, "tools", isWindows ? "aoc.bat" : "aoc");
@@ -47,7 +54,10 @@ async function executeRunner(
     const command = `${aocPath} ${args.join(" ")}`;
 
     const proc = isWindows
-      ? spawn("cmd", ["/c", aocPath, ...args], { cwd: agentDir, env: { ...process.env } })
+      ? spawn("cmd", ["/c", aocPath, ...args], {
+          cwd: agentDir,
+          env: { ...process.env },
+        })
       : spawn(aocPath, args, { cwd: agentDir, env: { ...process.env } });
 
     let stdout = "";
@@ -114,7 +124,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: "Invalid agent" });
   }
   if (body.day < 0 || body.day > 12) {
-    throw createError({ statusCode: 400, message: "Invalid day (must be 0-12)" });
+    throw createError({
+      statusCode: 400,
+      message: "Invalid day (must be 0-12)",
+    });
   }
   if (body.part !== 1 && body.part !== 2) {
     throw createError({ statusCode: 400, message: "Invalid part" });
@@ -127,7 +140,10 @@ export default defineEventHandler(async (event) => {
   const agentDir = join(rootDir, "agents", body.agent);
 
   if (!existsSync(agentDir)) {
-    throw createError({ statusCode: 404, message: "Agent directory not found" });
+    throw createError({
+      statusCode: 404,
+      message: "Agent directory not found",
+    });
   }
 
   const result = await executeRunner(

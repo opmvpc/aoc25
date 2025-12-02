@@ -17,7 +17,9 @@ const navItems = [
           <NuxtLink to="/" class="flex items-center gap-3 group">
             <span class="text-3xl">🎄</span>
             <div>
-              <h1 class="text-xl font-bold text-[#ffcc00] group-hover:text-white transition-colors">
+              <h1
+                class="text-xl font-bold text-[#ffcc00] group-hover:text-white transition-colors"
+              >
                 AoC 2025 Battle Royale
               </h1>
               <p class="text-xs text-[#666666]">Claude vs Codex vs Gemini</p>

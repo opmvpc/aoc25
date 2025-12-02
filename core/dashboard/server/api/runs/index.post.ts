@@ -39,7 +39,10 @@ async function executeRunner(
 
     // Use appropriate shell for platform
     const proc = isWindows
-      ? spawn("cmd", ["/c", aocPath, ...args], { cwd: agentDir, env: { ...process.env } })
+      ? spawn("cmd", ["/c", aocPath, ...args], {
+          cwd: agentDir,
+          env: { ...process.env },
+        })
       : spawn(aocPath, args, { cwd: agentDir, env: { ...process.env } });
 
     let stdout = "";
@@ -118,7 +121,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: "Invalid agent" });
   }
   if (body.day < 0 || body.day > 12) {
-    throw createError({ statusCode: 400, message: "Invalid day (must be 0-12)" });
+    throw createError({
+      statusCode: 400,
+      message: "Invalid day (must be 0-12)",
+    });
   }
   if (body.part !== 1 && body.part !== 2) {
     throw createError({ statusCode: 400, message: "Invalid part" });
@@ -131,7 +137,10 @@ export default defineEventHandler(async (event) => {
   const agentDir = join(rootDir, "agents", body.agent);
 
   if (!existsSync(agentDir)) {
-    throw createError({ statusCode: 404, message: "Agent directory not found" });
+    throw createError({
+      statusCode: 404,
+      message: "Agent directory not found",
+    });
   }
 
   // Execute
@@ -154,30 +163,36 @@ export default defineEventHandler(async (event) => {
 
   let expectedAnswer: string | null = null;
   if (body.useSample) {
-    expectedAnswer = body.part === 1 ? day.sample_expected_p1 : day.sample_expected_p2;
+    expectedAnswer =
+      body.part === 1 ? day.sample_expected_p1 : day.sample_expected_p2;
   } else {
     expectedAnswer = body.part === 1 ? day.answer_p1 : day.answer_p2;
   }
 
-  const isCorrect = expectedAnswer !== null && !result.error
-    ? result.answer === expectedAnswer
-    : null;
+  const isCorrect =
+    expectedAnswer !== null && !result.error
+      ? result.answer === expectedAnswer
+      : null;
 
   // Store run in database
-  const insertResult = db.prepare(`
+  const insertResult = db
+    .prepare(
+      `
     INSERT INTO runs (agent, day, part, language, answer, time_ms, is_correct, is_sample, error)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    body.agent,
-    body.day,
-    body.part,
-    body.language,
-    result.answer || null,
-    result.timeMs,
-    isCorrect === null ? null : isCorrect ? 1 : 0,
-    body.useSample ? 1 : 0,
-    result.error || null
-  );
+  `
+    )
+    .run(
+      body.agent,
+      body.day,
+      body.part,
+      body.language,
+      result.answer || null,
+      result.timeMs,
+      isCorrect === null ? null : isCorrect ? 1 : 0,
+      body.useSample ? 1 : 0,
+      result.error || null
+    );
 
   return {
     id: Number(insertResult.lastInsertRowid),

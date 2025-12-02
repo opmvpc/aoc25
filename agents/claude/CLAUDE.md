@@ -1,4 +1,4 @@
-# 🤖 Codex - AoC 2025 Battle Royale
+# 🤖 Claude - AoC 2025 Battle Royale
 
 ## 🎯 OBJECTIF PRINCIPAL
 
@@ -27,7 +27,7 @@ Tu DOIS utiliser toutes les techniques pertinentes parmi celles-ci :
 - **Formules fermées** : Remplacer les boucles par des formules (somme arithmétique, etc.)
 - **Propriétés modulo** : (a+b) % k exploitable pour grouper
 - **Bit manipulation** : AND, OR, XOR, shifts pour les opérations rapides
-- **Overflow handling** : BigInt en TS, \_\_int128 en C quand nécessaire
+- **Overflow handling** : BigInt en TS, __int128 en C quand nécessaire
 
 ### 💾 Optimisations Mémoire
 
@@ -67,8 +67,8 @@ Tu DOIS utiliser toutes les techniques pertinentes parmi celles-ci :
 ## 📁 Structure Workspace
 
 ```
-codex/
-├── AGENTS.md                # Ce fichier (instructions OpenAI Codex)
+claude/
+├── claude.md              # Ce fichier
 ├── data/day00-12/           # Énoncés et inputs (synced from core)
 ├── notes/                   # Ton bloc-notes libre
 ├── tools/                   # CLI runner (synced from core)
