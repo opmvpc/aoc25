@@ -221,7 +221,9 @@ export async function executeC(config: RunConfig): Promise<RunResult> {
   const parsed = parseCOutput(result.stdout, result.timeMs);
 
   // Use internal timing if available, otherwise use external timing
-  const timeMs = parsed.solveTimeMs ?? parsed.totalTimeMs;
+  // Sum parse + solve times for accurate measurement
+  const internalTimeMs = (parsed.parseTimeMs ?? 0) + (parsed.solveTimeMs ?? 0);
+  const timeMs = internalTimeMs > 0 ? internalTimeMs : parsed.totalTimeMs;
 
   if (parsed.error) {
     return {

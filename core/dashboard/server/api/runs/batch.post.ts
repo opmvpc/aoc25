@@ -39,16 +39,16 @@ async function executeRunner(
   useSample: boolean
 ): Promise<RunResult> {
   return new Promise((resolve) => {
-    const aocPath = join(agentDir, "tools", "aoc.bat");
+    const isWindows = process.platform === "win32";
+    const aocPath = join(agentDir, "tools", isWindows ? "aoc.bat" : "aoc");
     const args = ["run", day.toString(), part.toString()];
 
     if (useSample) args.push("--sample");
     if (language === "c") args.push("--lang", "c");
 
-    const proc = spawn("cmd", ["/c", aocPath, ...args], {
-      cwd: agentDir,
-      env: { ...process.env },
-    });
+    const proc = isWindows
+      ? spawn("cmd", ["/c", aocPath, ...args], { cwd: agentDir, env: { ...process.env } })
+      : spawn(aocPath, args, { cwd: agentDir, env: { ...process.env } });
 
     let stdout = "";
     let stderr = "";

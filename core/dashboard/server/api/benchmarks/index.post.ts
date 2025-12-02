@@ -70,24 +70,30 @@ async function executeSolver(
       proc.stdin.write(input);
       proc.stdin.end();
     } else {
-      // Run TypeScript solver
+      // Run TypeScript solver via a wrapper script that reads from stdin
       const solverPath = join(agentDir, "ts", `day${dayStr}`, `part${part}.ts`);
 
-      // Use inline execution
-      const code = `
-        import { pathToFileURL } from 'url';
-        const solver = (await import(pathToFileURL('${solverPath.replace(/\\/g, "/")}').href)).solver;
-        const input = ${JSON.stringify(input)};
-        const start = process.hrtime.bigint();
-        const result = solver.solve(input);
-        const end = process.hrtime.bigint();
-        console.log(JSON.stringify({ answer: result, timeNs: Number(end - start) }));
-      `;
+      // Use tsx directly without shell to properly handle stdin
+      const runnerCode = `
+import { pathToFileURL } from 'url';
+import { readFileSync } from 'fs';
+const solver = (await import(pathToFileURL('${solverPath.replace(/\\/g, "/")}').href)).solver;
+const input = readFileSync(0, 'utf-8');
+const start = process.hrtime.bigint();
+const result = solver.solve(input);
+const end = process.hrtime.bigint();
+console.log(JSON.stringify({ answer: result, timeNs: Number(end - start) }));
+`;
 
-      proc = spawn("npx", ["tsx", "-e", code], {
+      // Don't use shell: true - it breaks stdin piping
+      proc = spawn("npx", ["tsx", "-e", runnerCode], {
         cwd: agentDir,
-        shell: true,
+        stdio: ["pipe", "pipe", "pipe"],
       });
+
+      // Write input to stdin
+      proc.stdin.write(input);
+      proc.stdin.end();
     }
 
     let stdout = "";
@@ -118,7 +124,28 @@ async function executeSolver(
       }
 
       if (language === "c") {
-        resolve({ answer: stdout.trim(), timeMs: totalTimeMs });
+        // Parse C output: TIME:parse:X.XX\nTIME:solve:X.XX\nANSWER:XXX
+        const lines = stdout.trim().split("\n");
+        let answer = "";
+        let parseTimeMs = 0;
+        let solveTimeMs = 0;
+
+        for (const line of lines) {
+          if (line.startsWith("ANSWER:")) {
+            answer = line.substring(7);
+          } else if (line.startsWith("TIME:parse:")) {
+            parseTimeMs = parseFloat(line.substring(11)) || 0;
+          } else if (line.startsWith("TIME:solve:")) {
+            solveTimeMs = parseFloat(line.substring(11)) || 0;
+          }
+        }
+
+        // Use internal timing (parse + solve) for accurate measurement
+        const internalTimeMs = parseTimeMs + solveTimeMs;
+        resolve({ 
+          answer, 
+          timeMs: internalTimeMs > 0 ? internalTimeMs : totalTimeMs 
+        });
       } else {
         // Parse TS output
         try {
@@ -219,7 +246,7 @@ export default defineEventHandler(async (event) => {
   // Run benchmark
   const times: number[] = [];
   let answer = "";
-  let hasError = false;
+  let lastError = "";
 
   for (let i = 0; i < numRuns; i++) {
     const result = await executeSolver(
@@ -232,7 +259,7 @@ export default defineEventHandler(async (event) => {
     );
 
     if (result.error) {
-      hasError = true;
+      lastError = result.error;
       break;
     }
 
@@ -240,8 +267,8 @@ export default defineEventHandler(async (event) => {
     if (i === 0) answer = result.answer;
   }
 
-  if (hasError || times.length === 0) {
-    throw createError({ statusCode: 500, message: "Benchmark failed" });
+  if (times.length === 0) {
+    throw createError({ statusCode: 500, message: `Benchmark failed: ${lastError || "No runs completed"}` });
   }
 
   // Get expected answer

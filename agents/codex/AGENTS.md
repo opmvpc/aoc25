@@ -1,4 +1,4 @@
-# 🤖 Claude - AoC 2025 Battle Royale
+# 🤖 Codex - AoC 2025 Battle Royale
 
 ## 🎯 OBJECTIF PRINCIPAL
 
@@ -67,8 +67,8 @@ Tu DOIS utiliser toutes les techniques pertinentes parmi celles-ci :
 ## 📁 Structure Workspace
 
 ```
-claude/
-├── claude.md              # Ce fichier
+codex/
+├── AGENTS.md                # Ce fichier (instructions OpenAI Codex)
 ├── data/day00-12/           # Énoncés et inputs (synced from core)
 ├── notes/                   # Ton bloc-notes libre
 ├── tools/                   # CLI runner (synced from core)

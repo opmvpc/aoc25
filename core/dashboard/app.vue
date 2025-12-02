@@ -2,6 +2,7 @@
 const navItems = [
   { label: "Dashboard", to: "/", icon: "i-heroicons-home" },
   { label: "Benchmarks", to: "/benchmarks", icon: "i-heroicons-chart-bar" },
+  { label: "Debug", to: "/debug", icon: "i-heroicons-bug-ant" },
   { label: "Admin", to: "/admin", icon: "i-heroicons-cog-6-tooth" },
 ];
 </script>

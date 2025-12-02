@@ -13,7 +13,7 @@ import { existsSync } from "node:fs";
 
 const ROOT = process.cwd();
 const DAYS = 12;
-const AGENTS = ["claude", "AGENTS", "gemini"] as const;
+const AGENTS = ["claude", "codex", "gemini"] as const;
 type Agent = (typeof AGENTS)[number];
 
 // ═══════════════════════════════════════════════════════════════
@@ -707,9 +707,9 @@ async function scaffoldAgents(): Promise<void> {
     console.log(`\n  📂 ${agent}/`);
     const agentDir = join(ROOT, "agents", agent);
 
-    // Agent-specific MD file
+    // AGENTS.md file (standard name for all agents, uppercase)
     await writeIfNotExists(
-      join(agentDir, `${agent}.md`),
+      join(agentDir, `${agent.toUpperCase()}.md`),
       AGENT_MD_TEMPLATE(agent)
     );
 

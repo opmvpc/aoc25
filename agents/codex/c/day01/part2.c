@@ -10,19 +10,41 @@ int main(void) {
     char* input = aoc_read_input();
 
     AOC_TIMER_START(parse);
-    // Parse input
-    int line_count = 0;
-    char** lines = aoc_split_lines(input, &line_count);
+    int pos = 50;
     AOC_TIMER_END(parse);
 
     AOC_TIMER_START(solve);
-    // TODO: Implement solution
-    long long result = 0;
+    long long hits = 0;
+    char* p = input;
+
+    while (*p) {
+        char dir = *p++;
+        long long dist = 0;
+        while (*p >= '0' && *p <= '9') {
+            dist = dist * 10 + (*p - '0');
+            p++;
+        }
+        while (*p == '\n' || *p == '\r') p++;
+
+        long long first = (dir == 'R') ? (100 - pos) % 100 : pos % 100;
+        if (first == 0) first = 100;
+        if (first <= dist) {
+            hits += 1 + (dist - first) / 100;
+        }
+
+        int step = (int)(dist % 100);
+        if (dir == 'R') {
+            pos += step;
+            if (pos >= 100) pos -= 100;
+        } else {
+            pos -= step;
+            if (pos < 0) pos += 100;
+        }
+    }
     AOC_TIMER_END(solve);
 
-    AOC_RESULT_INT(result);
+    AOC_RESULT_INT(hits);
 
-    free(lines);
     aoc_cleanup(input);
     return 0;
 }

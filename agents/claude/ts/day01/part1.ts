@@ -12,12 +12,13 @@ export const solver: ISolver = {
     let position = 50;
     let count = 0;
 
-    for (const line of lines) {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
       const direction = line[0];
-      const distance = parseInt(line.slice(1));
+      const distance = parseInt(line.slice(1), 10);
 
-      if (direction === "L") {
-        position = ((position - distance) % 100 + 100) % 100;
+      if (direction === 'L') {
+        position = (position - distance % 100 + 100) % 100;
       } else {
         position = (position + distance) % 100;
       }
