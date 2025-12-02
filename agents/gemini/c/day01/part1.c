@@ -16,30 +16,38 @@ int main(void) {
     char* p = input;
     
     while (*p) {
-        // Skip whitespace
-        while (*p && *p <= 32) p++;
-        if (!*p) break;
+        // Fast skip whitespace/newlines
+        if (*p <= 32) { p++; continue; }
         
         char dir = *p++;
         int val = 0;
         
-        // Parse number manually (faster than atoi/strtol)
-        while (*p >= '0' && *p <= '9') {
-            val = val * 10 + (*p++ - '0');
+        // Parse only needed modulo 100 for position update
+        // But wait, is val needed for anything else?
+        // No, Part 1 only cares about final position == 0.
+        while (*p >= '0') {
+            val = (val * 10 + (*p++ - '0'));
+            // Keep val small? 
+            // val = (val * 10 + d) % 100 works strictly for position
+            // but (val * 10 + d) might overflow if we don't modulo.
+            // However, assuming val fits in int is safe for AoC.
+            // But optimizing: we only need val % 100.
+            // We can do: if (val >= 100) val %= 100; inside? expensive.
+            // Just parse normally, val is small.
         }
         
-        // Apply rotation
-        // 'L' is 76, 'R' is 82
+        // Optimization: Normalize L/R
+        // R (82) -> +1, L (76) -> -1 ?
+        // if (dir == 'L') val = -val;
+        // position = (position + val) % 100;
+        
         if (dir == 'L') {
-            position = (position - val) % 100;
-            // Branchless correction for negative modulo result:
-            // if position < 0, we add 100. 
-            // (position >> 31) will be -1 if negative, 0 if positive (assuming 32-bit int)
-            // But simpler: just if (position < 0) position += 100; is very fast.
-            if (position < 0) position += 100;
-        } else {
-            position = (position + val) % 100;
+            val = -val;
         }
+        
+        position = (position + val) % 100;
+        // Fix negative modulo result
+        if (position < 0) position += 100;
         
         if (position == 0) {
             count++;

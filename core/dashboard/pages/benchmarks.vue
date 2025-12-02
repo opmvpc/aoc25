@@ -5,12 +5,11 @@ const { data: benchmarks, refresh } = await useFetch<BenchmarkSession[]>("/api/b
 
 const agents: Agent[] = ["claude", "codex", "gemini"];
 const languages: Language[] = ["ts", "c"];
-const days = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+const days = Array.from({ length: 13 }, (_, i) => i);
 
-// Benchmark form
 const form = reactive({
-  agent: "claude" as Agent | "all",
-  day: 0,
+  agent: "all" as Agent | "all",
+  day: 1,
   part: 1 as 1 | 2,
   language: "ts" as Language,
   numRuns: 100,
@@ -34,7 +33,6 @@ async function runBenchmark() {
 
   try {
     if (form.agent === "all") {
-      // Benchmark all agents
       const res = await $fetch<{
         ranking: Array<{
           rank: number;
@@ -54,7 +52,6 @@ async function runBenchmark() {
       });
       batchResult.value = res;
     } else {
-      // Single agent
       const res = await $fetch<BenchmarkSession>("/api/benchmarks", {
         method: "POST",
         body: {
@@ -75,278 +72,252 @@ async function runBenchmark() {
   }
 }
 
-function formatTime(ms: number | null | undefined): string {
-  if (ms === null || ms === undefined) return "-";
-  if (ms < 1) return `${(ms * 1000).toFixed(0)}µs`;
+function fmt(ms: number | null | undefined): string {
+  if (ms === null || ms === undefined) return "—";
+  if (ms < 0.001) return `${Math.round(ms * 1000000)}ns`;
+  if (ms < 1) return `${Math.round(ms * 1000)}µs`;
   if (ms < 1000) return `${ms.toFixed(2)}ms`;
   return `${(ms / 1000).toFixed(2)}s`;
 }
 
 function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleString();
+  return new Date(dateStr).toLocaleDateString('fr-FR', { 
+    day: '2-digit', 
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 }
+
+const medal = (idx: number) => idx === 0 ? '🥇' : idx === 1 ? '🥈' : '🥉';
 </script>
 
 <template>
-  <div>
-    <h1 class="text-2xl font-bold text-[#ffcc00] mb-8">📊 Benchmark Arena</h1>
+  <div class="max-w-6xl mx-auto space-y-4">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <h1 class="text-xl font-black flex items-center gap-2">
+        <span class="text-yellow-400">📊</span> Benchmark Arena
+      </h1>
+      <NuxtLink to="/" class="text-xs text-white/30 hover:text-white">← Back</NuxtLink>
+    </div>
 
-    <!-- Run Benchmark Form -->
-    <div class="card p-6 mb-8">
-      <h2 class="text-lg font-bold text-[#00cc00] mb-4">🚀 Run New Benchmark</h2>
-
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+    <!-- Run Form -->
+    <div class="glass rounded-xl p-4">
+      <div class="flex items-end gap-3 flex-wrap">
         <!-- Agent -->
-        <div>
-          <label class="block text-sm text-[#666666] mb-1">Agent</label>
-          <select
-            v-model="form.agent"
-            class="w-full bg-[#0f0f23] border border-[#333] rounded p-2 text-[#cccccc] focus:border-[#00cc00] focus:outline-none"
-          >
-            <option value="all">🏆 All Agents (Battle!)</option>
-            <option v-for="a in agents" :key="a" :value="a">{{ a }}</option>
-          </select>
+        <div class="flex-1 min-w-[150px]">
+          <label class="block text-[10px] text-white/40 mb-1">Agent</label>
+          <div class="flex gap-1">
+            <button
+              @click="form.agent = 'all'"
+              class="px-2 py-1.5 rounded text-xs font-bold transition-all"
+              :class="form.agent === 'all' 
+                ? 'bg-yellow-500 text-black' 
+                : 'glass-subtle text-white/40 hover:text-white'"
+            >
+              🏆 All
+            </button>
+            <button
+              v-for="agent in agents"
+              :key="agent"
+              @click="form.agent = agent"
+              class="px-2 py-1.5 rounded text-xs font-bold capitalize transition-all"
+              :class="form.agent === agent 
+                ? `agent-${agent}` 
+                : 'glass-subtle text-white/40 hover:text-white'"
+            >
+              {{ agent.slice(0, 3) }}
+            </button>
+          </div>
         </div>
 
         <!-- Day -->
-        <div>
-          <label class="block text-sm text-[#666666] mb-1">Day</label>
+        <div class="w-24">
+          <label class="block text-[10px] text-white/40 mb-1">Day</label>
           <select
             v-model="form.day"
-            class="w-full bg-[#0f0f23] border border-[#333] rounded p-2 text-[#cccccc] focus:border-[#00cc00] focus:outline-none"
+            class="w-full bg-black/30 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none"
           >
-            <option v-for="d in days" :key="d" :value="d">
-              Day {{ d.toString().padStart(2, "0") }}{{ d === 0 ? " (Test)" : "" }}
-            </option>
+            <option v-for="d in days" :key="d" :value="d">Day {{ d }}</option>
           </select>
         </div>
 
         <!-- Part -->
-        <div>
-          <label class="block text-sm text-[#666666] mb-1">Part</label>
-          <select
-            v-model="form.part"
-            class="w-full bg-[#0f0f23] border border-[#333] rounded p-2 text-[#cccccc] focus:border-[#00cc00] focus:outline-none"
-          >
-            <option :value="1">Part 1</option>
-            <option :value="2">Part 2</option>
-          </select>
+        <div class="w-20">
+          <label class="block text-[10px] text-white/40 mb-1">Part</label>
+          <div class="flex gap-1">
+            <button
+              v-for="p in [1, 2] as const"
+              :key="p"
+              @click="form.part = p"
+              class="flex-1 px-2 py-1.5 rounded text-xs font-bold transition-all"
+              :class="form.part === p ? 'bg-white/20 text-white' : 'glass-subtle text-white/40'"
+            >
+              P{{ p }}
+            </button>
+          </div>
         </div>
 
         <!-- Language -->
-        <div>
-          <label class="block text-sm text-[#666666] mb-1">Language</label>
-          <select
-            v-model="form.language"
-            class="w-full bg-[#0f0f23] border border-[#333] rounded p-2 text-[#cccccc] focus:border-[#00cc00] focus:outline-none"
-          >
-            <option v-for="l in languages" :key="l" :value="l">
-              {{ l.toUpperCase() }}
-            </option>
-          </select>
+        <div class="w-20">
+          <label class="block text-[10px] text-white/40 mb-1">Lang</label>
+          <div class="flex gap-1">
+            <button
+              v-for="lang in languages"
+              :key="lang"
+              @click="form.language = lang"
+              class="flex-1 px-2 py-1.5 rounded text-xs font-bold uppercase transition-all"
+              :class="form.language === lang ? 'bg-white/20 text-white' : 'glass-subtle text-white/40'"
+            >
+              {{ lang }}
+            </button>
+          </div>
         </div>
 
-        <!-- Num Runs -->
-        <div>
-          <label class="block text-sm text-[#666666] mb-1">Runs</label>
+        <!-- Runs -->
+        <div class="w-20">
+          <label class="block text-[10px] text-white/40 mb-1">Runs</label>
           <input
             v-model.number="form.numRuns"
             type="number"
             min="10"
             max="1000"
-            class="w-full bg-[#0f0f23] border border-[#333] rounded p-2 text-[#cccccc] focus:border-[#00cc00] focus:outline-none"
+            class="w-full bg-black/30 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-white focus:outline-none"
           />
         </div>
-      </div>
 
-      <button
-        @click="runBenchmark"
-        :disabled="running"
-        class="px-6 py-3 bg-[#00cc00] text-[#0f0f23] rounded font-bold hover:bg-[#00ff00] disabled:opacity-50 transition-all"
-        :class="{ 'pulse-running': running }"
-      >
-        {{
-          running
-            ? "⏳ Benchmarking..."
-            : form.agent === "all"
-              ? "🏆 Start Battle Royale!"
-              : "🏁 Start Benchmark"
-        }}
-      </button>
+        <!-- Run -->
+        <UButton
+          :color="form.agent === 'all' ? 'warning' : 'success'"
+          :loading="running"
+          :disabled="running"
+          icon="i-heroicons-play"
+          @click="runBenchmark"
+        >
+          {{ form.agent === 'all' ? 'Battle!' : 'Run' }}
+        </UButton>
+      </div>
     </div>
 
     <!-- Battle Result -->
-    <div v-if="batchResult" class="card p-6 mb-8 glow-gold">
-      <h2 class="text-lg font-bold text-[#ffcc00] mb-4">
-        🏆 Battle Royale Results - Day {{ form.day }} Part {{ form.part }}
+    <div v-if="batchResult" class="glass rounded-xl p-4 ring-1 ring-yellow-500/30">
+      <h2 class="text-sm font-bold text-yellow-400 mb-3 flex items-center gap-2">
+        🏆 Battle Royale — Day {{ form.day }} P{{ form.part }} {{ form.language.toUpperCase() }}
       </h2>
 
-      <div class="space-y-4">
+      <div class="grid grid-cols-3 gap-3">
         <div
-          v-for="(item, index) in batchResult.ranking"
+          v-for="(item, idx) in batchResult.ranking"
           :key="item.agent"
-          class="flex items-center justify-between p-4 rounded"
+          class="glass-subtle rounded-lg p-3 text-center"
           :class="{
-            'bg-[#2a2a1e] border border-[#ffcc00]': index === 0,
-            'bg-[#1e1e2a] border border-[#9999cc]': index === 1,
-            'bg-[#2a1e1e] border border-[#cc9966]': index === 2,
+            'ring-1 ring-yellow-500/50': idx === 0,
+            'ring-1 ring-gray-400/30': idx === 1,
+            'ring-1 ring-amber-700/30': idx === 2,
           }"
         >
-          <div class="flex items-center gap-4">
-            <span class="text-3xl">
-              {{ index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉" }}
-            </span>
-            <span
-              :class="`agent-${item.agent}`"
-              class="px-3 py-1 rounded border text-lg font-bold"
-            >
-              {{ item.agent }}
-            </span>
+          <div class="text-2xl mb-1">{{ medal(idx) }}</div>
+          <span :class="`agent-${item.agent}`" class="px-2 py-0.5 rounded text-xs font-bold capitalize">
+            {{ item.agent }}
+          </span>
+          <div class="text-xl font-mono font-bold mt-2" :class="idx === 0 ? 'text-yellow-400' : 'text-white'">
+            {{ fmt(item.avgTimeMs) }}
           </div>
-
-          <div class="text-right">
-            <div class="text-2xl font-bold text-[#00cc00]">
-              {{ formatTime(item.avgTimeMs) }}
-            </div>
-            <div class="text-sm text-[#666666]">
-              {{
-                item.isCorrect === true
-                  ? "✅ Correct"
-                  : item.isCorrect === false
-                    ? "❌ Wrong"
-                    : "⏳ Unchecked"
-              }}
-            </div>
+          <div class="text-[10px] mt-1" :class="item.isCorrect ? 'text-green-400' : 'text-red-400'">
+            {{ item.isCorrect === true ? '✓ Correct' : item.isCorrect === false ? '✗ Wrong' : '? Unchecked' }}
           </div>
         </div>
       </div>
     </div>
 
     <!-- Single Agent Result -->
-    <div v-if="result" class="card p-6 mb-8 glow-gold">
-      <h2 class="text-lg font-bold text-[#ffcc00] mb-4">🏆 Latest Result</h2>
+    <div v-if="result" class="glass rounded-xl p-4 ring-1 ring-green-500/30">
+      <h2 class="text-sm font-bold text-green-400 mb-3">📈 Benchmark Result</h2>
 
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div class="grid grid-cols-4 gap-4 mb-4">
         <div class="text-center">
-          <div class="text-3xl font-bold text-[#00cc00]">
-            {{ formatTime(result.avg_time_ms) }}
-          </div>
-          <div class="text-sm text-[#666666]">Average</div>
+          <div class="text-2xl font-mono font-bold text-green-400">{{ fmt(result.avg_time_ms) }}</div>
+          <div class="text-[10px] text-white/40">Average</div>
         </div>
         <div class="text-center">
-          <div class="text-3xl font-bold text-[#9999cc]">
-            {{ formatTime(result.min_time_ms) }}
-          </div>
-          <div class="text-sm text-[#666666]">Min</div>
+          <div class="text-2xl font-mono font-bold text-yellow-400">{{ fmt(result.p50_time_ms) }}</div>
+          <div class="text-[10px] text-white/40">Median (P50)</div>
         </div>
         <div class="text-center">
-          <div class="text-3xl font-bold text-[#9999cc]">
-            {{ formatTime(result.max_time_ms) }}
-          </div>
-          <div class="text-sm text-[#666666]">Max</div>
+          <div class="text-2xl font-mono font-bold text-white/70">{{ fmt(result.min_time_ms) }}</div>
+          <div class="text-[10px] text-white/40">Min</div>
         </div>
         <div class="text-center">
-          <div class="text-3xl font-bold text-[#ffcc00]">
-            {{ formatTime(result.p50_time_ms) }}
-          </div>
-          <div class="text-sm text-[#666666]">P50 (Median)</div>
+          <div class="text-2xl font-mono font-bold text-white/70">{{ fmt(result.max_time_ms) }}</div>
+          <div class="text-[10px] text-white/40">Max</div>
         </div>
       </div>
 
-      <div class="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-[#333]">
+      <div class="grid grid-cols-3 gap-4 pt-3 border-t border-white/10">
         <div class="text-center">
-          <div class="text-xl text-[#cccccc]">
-            {{ formatTime(result.p95_time_ms) }}
-          </div>
-          <div class="text-xs text-[#666666]">P95</div>
+          <div class="text-lg font-mono text-white/60">{{ fmt(result.p95_time_ms) }}</div>
+          <div class="text-[10px] text-white/30">P95</div>
         </div>
         <div class="text-center">
-          <div class="text-xl text-[#cccccc]">
-            {{ formatTime(result.p99_time_ms) }}
-          </div>
-          <div class="text-xs text-[#666666]">P99</div>
+          <div class="text-lg font-mono text-white/60">{{ fmt(result.p99_time_ms) }}</div>
+          <div class="text-[10px] text-white/30">P99</div>
         </div>
         <div class="text-center">
-          <div class="text-xl text-[#cccccc]">
-            ±{{ formatTime(result.std_dev_ms) }}
-          </div>
-          <div class="text-xs text-[#666666]">Std Dev</div>
+          <div class="text-lg font-mono text-white/60">±{{ fmt(result.std_dev_ms) }}</div>
+          <div class="text-[10px] text-white/30">Std Dev</div>
         </div>
       </div>
     </div>
 
     <!-- History -->
-    <div class="card p-6">
-      <h2 class="text-lg font-bold text-[#ffcc00] mb-4">📜 Benchmark History</h2>
+    <div class="glass rounded-xl p-4">
+      <h2 class="text-sm font-bold text-white/60 mb-3">📜 History</h2>
 
-      <div
-        v-if="!benchmarks?.length"
-        class="text-[#666666] italic text-center py-8"
-      >
-        No benchmarks yet. Run your first benchmark above!
+      <div v-if="!benchmarks?.length" class="text-white/30 text-sm text-center py-6">
+        No benchmarks yet
       </div>
 
-      <table v-else class="aoc-table">
-        <thead>
-          <tr>
-            <th>Agent</th>
-            <th>Day</th>
-            <th>Part</th>
-            <th>Lang</th>
-            <th>Runs</th>
-            <th>Avg</th>
-            <th>P50</th>
-            <th>P95</th>
-            <th>Status</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="b in benchmarks" :key="b.id">
-            <td>
-              <span
-                :class="`agent-${b.agent}`"
-                class="px-2 py-0.5 rounded border text-sm"
-              >
-                {{ b.agent }}
-              </span>
-            </td>
-            <td>{{ b.day }}</td>
-            <td>P{{ b.part }}</td>
-            <td class="uppercase">{{ b.language }}</td>
-            <td>{{ b.num_runs }}</td>
-            <td class="text-[#00cc00] font-mono">
-              {{ formatTime(b.avg_time_ms) }}
-            </td>
-            <td class="text-[#ffcc00] font-mono">
-              {{ formatTime(b.p50_time_ms) }}
-            </td>
-            <td class="text-[#9999cc] font-mono">
-              {{ formatTime(b.p95_time_ms) }}
-            </td>
-            <td>
-              <span
-                :class="
-                  b.is_correct === true
-                    ? 'text-[#00cc00]'
-                    : b.is_correct === false
-                      ? 'text-[#ff0000]'
-                      : 'text-[#9999cc]'
-                "
-              >
-                {{
-                  b.is_correct === true
-                    ? "✅"
-                    : b.is_correct === false
-                      ? "❌"
-                      : "⏳"
-                }}
-              </span>
-            </td>
-            <td class="text-[#666666] text-sm">{{ formatDate(b.created_at) }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div v-else class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="border-b border-white/10 text-white/40">
+              <th class="py-2 px-2 text-left font-normal">Agent</th>
+              <th class="py-2 px-2 text-center font-normal">Day</th>
+              <th class="py-2 px-2 text-center font-normal">Part</th>
+              <th class="py-2 px-2 text-center font-normal">Lang</th>
+              <th class="py-2 px-2 text-center font-normal">Runs</th>
+              <th class="py-2 px-2 text-right font-normal">Avg</th>
+              <th class="py-2 px-2 text-right font-normal">P50</th>
+              <th class="py-2 px-2 text-right font-normal">P95</th>
+              <th class="py-2 px-2 text-center font-normal">✓</th>
+              <th class="py-2 px-2 text-right font-normal">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="b in benchmarks" :key="b.id" class="border-b border-white/5 hover:bg-white/5">
+              <td class="py-1.5 px-2">
+                <span :class="`agent-${b.agent}`" class="px-1.5 py-0.5 rounded text-[10px] font-bold capitalize">
+                  {{ b.agent.slice(0, 3) }}
+                </span>
+              </td>
+              <td class="py-1.5 px-2 text-center text-white/60">{{ b.day }}</td>
+              <td class="py-1.5 px-2 text-center text-white/60">P{{ b.part }}</td>
+              <td class="py-1.5 px-2 text-center text-white/60 uppercase">{{ b.language }}</td>
+              <td class="py-1.5 px-2 text-center text-white/40">{{ b.num_runs }}</td>
+              <td class="py-1.5 px-2 text-right font-mono text-green-400">{{ fmt(b.avg_time_ms) }}</td>
+              <td class="py-1.5 px-2 text-right font-mono text-yellow-400">{{ fmt(b.p50_time_ms) }}</td>
+              <td class="py-1.5 px-2 text-right font-mono text-white/50">{{ fmt(b.p95_time_ms) }}</td>
+              <td class="py-1.5 px-2 text-center">
+                <span :class="b.is_correct === true ? 'text-green-400' : b.is_correct === false ? 'text-red-400' : 'text-white/30'">
+                  {{ b.is_correct === true ? '✓' : b.is_correct === false ? '✗' : '?' }}
+                </span>
+              </td>
+              <td class="py-1.5 px-2 text-right text-white/30">{{ formatDate(b.created_at) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </template>

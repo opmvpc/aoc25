@@ -7,20 +7,35 @@ import type { ISolver } from "../../tools/runner/types.js";
 
 export const solver: ISolver = {
   solve(input: string): string {
-    const lines = input.trim().split("\n");
-
     let position = 50;
     let count = 0;
+    let i = 0;
+    const len = input.length;
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
-      const direction = line[0];
-      const distance = parseInt(line.slice(1), 10);
+    while (i < len) {
+      // Skip whitespace
+      while (i < len && (input[i] === ' ' || input[i] === '\r')) i++;
+      if (i >= len) break;
+
+      // Read direction
+      const direction = input[i++];
+      if (direction === '\n') continue;
+
+      // Parse distance manually (faster than parseInt)
+      let distance = 0;
+      while (i < len && input[i] >= '0' && input[i] <= '9') {
+        distance = distance * 10 + (input.charCodeAt(i) - 48);
+        i++;
+      }
+
+      // Skip newline
+      if (i < len && input[i] === '\n') i++;
 
       if (direction === 'L') {
         // Count crossings for left rotation
-        count += Math.floor(distance / 100);
-        const remainder = distance % 100;
+        const quotient = (distance / 100) | 0;
+        count += quotient;
+        const remainder = distance - quotient * 100;
         if (remainder >= position && position !== 0) {
           count++;
         }
@@ -28,7 +43,7 @@ export const solver: ISolver = {
         position = (position - remainder + 100) % 100;
       } else {
         // Count crossings for right rotation
-        count += Math.floor((position + distance) / 100);
+        count += ((position + distance) / 100) | 0;
         // Update position
         position = (position + distance) % 100;
       }

@@ -13,36 +13,27 @@ export const solver: ISolver = {
     const len = s.length;
 
     for (let i = 0; i < len; ) {
-      const dir = s.charCodeAt(i); // 'L' or 'R'
-      i++;
+      const dir = s.charCodeAt(i++); // 'L' or 'R'
 
       let dist = 0;
-      while (i < len) {
-        const c = s.charCodeAt(i);
-        if (c >= 48 && c <= 57) {
-          dist = dist * 10 + (c - 48);
-          i++;
-        } else {
-          // Skip newline characters (\n or \r\n)
-          do {
-            i++;
-          } while (i < len && (s.charCodeAt(i) === 10 || s.charCodeAt(i) === 13));
-          break;
-        }
+      let c: number;
+      while (i < len && (c = s.charCodeAt(i)) >= 48 && c <= 57) {
+        dist = dist * 10 + (c - 48);
+        i++;
       }
+      // Skip newline chars fast
+      while (i < len && ((c = s.charCodeAt(i)) === 10 || c === 13)) i++;
 
       const step = dist % 100;
-      if (dir === 82) {
-        // 'R'
+      if (dir === 82 /* 'R' */) {
         pos += step;
         if (pos >= 100) pos -= 100;
       } else {
-        // 'L'
         pos -= step;
         if (pos < 0) pos += 100;
       }
 
-      if (pos === 0) hits++;
+      hits += (pos === 0) as unknown as number;
     }
 
     return String(hits);

@@ -10,7 +10,6 @@ int main(void) {
     char* input = aoc_read_input();
 
     AOC_TIMER_START(parse);
-    // Manual parsing for optimal performance
     char* ptr = input;
     AOC_TIMER_END(parse);
 
@@ -18,42 +17,38 @@ int main(void) {
     int position = 50;
     long long count = 0;
 
-    while (*ptr) {
+    char c;
+    while ((c = *ptr)) {
         // Skip whitespace
-        while (*ptr == ' ' || *ptr == '\t') ptr++;
-        if (*ptr == '\0' || *ptr == '\r' || *ptr == '\n') {
+        if (c <= ' ') {
             ptr++;
             continue;
         }
 
         // Parse direction
-        char direction = *ptr++;
+        char dir = c;
+        ptr++;
 
-        // Parse distance using strtol
-        char* end;
-        long distance = strtol(ptr, &end, 10);
-        ptr = end;
-
-        // Count crossings and update position
-        if (direction == 'L') {
-            // Count crossings for left rotation
-            count += distance / 100;
-            int remainder = distance % 100;
-            if (remainder >= position && position != 0) {
-                count++;
-            }
-            // Update position
-            position = (position - remainder + 100) % 100;
-        } else {
-            // Count crossings for right rotation
-            count += (position + distance) / 100;
-            // Update position
-            position = (position + distance) % 100;
+        // Parse distance
+        long distance = 0;
+        while ((c = *ptr) >= '0' && c <= '9') {
+            distance = distance * 10 + (c - '0');
+            ptr++;
         }
 
-        // Skip to next line
-        while (*ptr && *ptr != '\n') ptr++;
-        if (*ptr == '\n') ptr++;
+        // Process based on direction
+        if (dir == 'L') {
+            // Left rotation
+            long quotient = distance / 100;
+            count += quotient;
+            int remainder = distance % 100;
+            count += (remainder >= position) & (position != 0);
+            position = (position - remainder + 100) % 100;
+        } else {
+            // Right rotation
+            count += (position + distance) / 100;
+            position = (position + distance) % 100;
+        }
     }
 
     long long result = count;

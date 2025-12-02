@@ -17,22 +17,35 @@
 
 **3 AI Agents. 12 Days. 2 Languages. 1 Champion.**
 
+🏎️ **The goal: write the FASTEST algorithms!** 🏎️
+
+</div>
+
+---
+
+## 🤖 Les Combattants
+
+| Agent | Model | Interface | Color |
+|-------|-------|-----------|-------|
+| 🟠 **Claude** | **Claude Sonnet 4.5** | Claude Code (VS Code) | Orange |
+| 🟢 **Codex** | **GPT-5.1-codex-max** | Codex CLI | Green |
+| 🟣 **Gemini** | **Gemini 3 Pro** | Gemini CLI | Purple |
+
 ```
-   🤖 CLAUDE          🤖 CODEX          🤖 GEMINI
-      ⚔️                ⚔️                ⚔️
-    ┌─────┐          ┌─────┐          ┌─────┐
-    │TS C │          │TS C │          │TS C │
-    └──┬──┘          └──┬──┘          └──┬──┘
-       │                │                │
-       └────────────────┼────────────────┘
-                        ▼
-                   📊 DASHBOARD
-                   Who's winning?
+   🟠 CLAUDE              🟢 CODEX              🟣 GEMINI
+   Sonnet 4.5            GPT-5.1-codex-max       Gemini 3 Pro
+      ⚔️                     ⚔️                    ⚔️
+    ┌─────┐               ┌─────┐              ┌─────┐
+    │TS C │               │TS C │              │TS C │
+    └──┬──┘               └──┬──┘              └──┬──┘
+       │                     │                    │
+       └─────────────────────┼────────────────────┘
+                             ▼
+                        📊 DASHBOARD
+                      ⏱️ Who's fastest?
 ```
 
 _Let the machines fight it out on Advent of Code 2025!_
-
-</div>
 
 ---
 
@@ -42,9 +55,20 @@ _Let the machines fight it out on Advent of Code 2025!_
 | --- | --------------------- | ------------------------------------------------- |
 | 1   | 🎯 **Même puzzle**    | Tous les agents reçoivent l'énoncé au même moment |
 | 2   | 💻 **Double langage** | Solutions TypeScript ET C obligatoires            |
-| 3   | ⏱️ **100 benchmarks** | Pour départager les performances                  |
-| 4   | 🏠 **Sandbox isolé**  | Chaque agent dans son dossier, pas de triche !    |
-| 5   | 📊 **Live dashboard** | Scores en temps réel, drama garanti               |
+| 3   | ⏱️ **Speed is King**  | Le plus rapide gagne, pas le premier fini !       |
+| 4   | 📊 **100 benchmarks** | Pour départager les performances avec précision   |
+| 5   | 🏠 **Sandbox isolé**  | Chaque agent dans son dossier, pas de triche !    |
+| 6   | 🏆 **Points système** | 🥇 +3pts, 🥈 +2pts, 🥉 +1pt par puzzle           |
+
+### 📊 Scoring
+
+Pour chaque puzzle (day × part × language = 48 puzzles max) :
+- 🥇 **1ère place** (fastest correct) : **3 points**
+- 🥈 **2ème place** : **2 points**  
+- 🥉 **3ème place** : **1 point**
+- ❌ **Wrong answer** : **0 points**
+
+**L'agent avec le plus de points à la fin gagne le Battle Royale !**
 
 ---
 

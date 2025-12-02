@@ -1,12 +1,6 @@
 <script setup lang="ts">
-definePageMeta({
-  title: "Debug Runner",
-});
-
 const agents = ["claude", "codex", "gemini"] as const;
 const days = Array.from({ length: 13 }, (_, i) => i);
-const parts = [1, 2] as const;
-const languages = ["ts", "c"] as const;
 
 const selectedAgent = ref<(typeof agents)[number]>("claude");
 const selectedDay = ref(0);
@@ -32,7 +26,6 @@ const result = ref<{
 async function runDebug() {
   isRunning.value = true;
   result.value = null;
-
   try {
     const response = await $fetch("/api/runs/debug", {
       method: "POST",
@@ -64,306 +57,203 @@ async function runDebug() {
   }
 }
 
-function formatTime(ms: number): string {
-  if (ms < 1) return `${(ms * 1000).toFixed(0)}µs`;
+function fmt(ms: number): string {
+  if (ms < 0.001) return `${Math.round(ms * 1000000)}ns`;
+  if (ms < 1) return `${Math.round(ms * 1000)}µs`;
   if (ms < 1000) return `${ms.toFixed(2)}ms`;
   return `${(ms / 1000).toFixed(2)}s`;
 }
-
-const agentColors = {
-  claude: "text-orange-400",
-  codex: "text-green-400",
-  gemini: "text-blue-400",
-};
-
-const agentEmojis = {
-  claude: "🟠",
-  codex: "🟢",
-  gemini: "🔵",
-};
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-900 text-white p-8">
-    <div class="max-w-6xl mx-auto">
-      <!-- Header -->
-      <div class="mb-8">
-        <h1 class="text-4xl font-bold mb-2">🔧 Debug Runner</h1>
-        <p class="text-gray-400">
-          Exécutez une solution et inspectez l'output brut
-        </p>
-      </div>
+  <div class="max-w-5xl mx-auto space-y-4">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <h1 class="text-xl font-black flex items-center gap-2">
+        <span class="text-yellow-400">🔧</span> Debug Runner
+      </h1>
+      <NuxtLink to="/" class="text-xs text-white/30 hover:text-white">← Back</NuxtLink>
+    </div>
 
-      <!-- Controls -->
-      <div class="bg-gray-800 rounded-xl p-6 mb-8 shadow-xl">
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-          <!-- Agent -->
-          <div>
-            <label class="block text-sm font-medium text-gray-400 mb-2"
-              >Agent</label
-            >
-            <select
-              v-model="selectedAgent"
-              class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option v-for="agent in agents" :key="agent" :value="agent">
-                {{ agentEmojis[agent] }} {{ agent }}
-              </option>
-            </select>
-          </div>
-
-          <!-- Day -->
-          <div>
-            <label class="block text-sm font-medium text-gray-400 mb-2"
-              >Day</label
-            >
-            <select
-              v-model="selectedDay"
-              class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option v-for="day in days" :key="day" :value="day">
-                Day {{ day }}
-              </option>
-            </select>
-          </div>
-
-          <!-- Part -->
-          <div>
-            <label class="block text-sm font-medium text-gray-400 mb-2"
-              >Part</label
-            >
-            <select
-              v-model="selectedPart"
-              class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option v-for="part in parts" :key="part" :value="part">
-                Part {{ part }}
-              </option>
-            </select>
-          </div>
-
-          <!-- Language -->
-          <div>
-            <label class="block text-sm font-medium text-gray-400 mb-2"
-              >Language</label
-            >
-            <select
-              v-model="selectedLanguage"
-              class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="ts">TypeScript</option>
-              <option value="c">C</option>
-            </select>
-          </div>
-
-          <!-- Sample Toggle -->
-          <div>
-            <label class="block text-sm font-medium text-gray-400 mb-2"
-              >Input</label
-            >
+    <!-- Controls -->
+    <div class="glass rounded-xl p-4">
+      <div class="flex items-end gap-3 flex-wrap">
+        <!-- Agent -->
+        <div class="flex-1 min-w-[120px]">
+          <label class="block text-[10px] text-white/40 mb-1">Agent</label>
+          <div class="flex gap-1">
             <button
-              @click="useSample = !useSample"
-              :class="[
-                'w-full px-4 py-2.5 rounded-lg font-medium transition-colors',
-                useSample
-                  ? 'bg-yellow-600 hover:bg-yellow-500 text-white'
-                  : 'bg-purple-600 hover:bg-purple-500 text-white',
-              ]"
+              v-for="agent in agents"
+              :key="agent"
+              @click="selectedAgent = agent"
+              class="flex-1 px-2 py-1.5 rounded text-xs font-bold capitalize transition-all"
+              :class="selectedAgent === agent 
+                ? `agent-${agent}` 
+                : 'glass-subtle text-white/40 hover:text-white'"
             >
-              {{ useSample ? "📋 Sample" : "📄 Final" }}
+              {{ agent }}
             </button>
           </div>
+        </div>
 
-          <!-- Run Button -->
-          <div>
-            <label class="block text-sm font-medium text-gray-400 mb-2"
-              >&nbsp;</label
-            >
+        <!-- Day -->
+        <div class="w-24">
+          <label class="block text-[10px] text-white/40 mb-1">Day</label>
+          <select
+            v-model="selectedDay"
+            class="w-full bg-black/30 border border-white/10 rounded-lg px-2 py-1.5 text-sm text-white focus:border-yellow-500/50 focus:outline-none"
+          >
+            <option v-for="d in days" :key="d" :value="d">Day {{ d }}</option>
+          </select>
+        </div>
+
+        <!-- Part -->
+        <div class="w-24">
+          <label class="block text-[10px] text-white/40 mb-1">Part</label>
+          <div class="flex gap-1">
             <button
-              @click="runDebug"
-              :disabled="isRunning"
-              :class="[
-                'w-full px-6 py-2.5 rounded-lg font-bold transition-all transform',
-                isRunning
-                  ? 'bg-gray-600 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 hover:scale-105',
-              ]"
+              v-for="p in [1, 2] as const"
+              :key="p"
+              @click="selectedPart = p"
+              class="flex-1 px-2 py-1.5 rounded text-xs font-bold transition-all"
+              :class="selectedPart === p 
+                ? 'bg-white/20 text-white' 
+                : 'glass-subtle text-white/40 hover:text-white'"
             >
-              <span
-                v-if="isRunning"
-                class="flex items-center justify-center gap-2"
-              >
-                <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                  <circle
-                    class="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    stroke-width="4"
-                    fill="none"
-                  />
-                  <path
-                    class="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  />
-                </svg>
-                Running...
+              P{{ p }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Language -->
+        <div class="w-24">
+          <label class="block text-[10px] text-white/40 mb-1">Language</label>
+          <div class="flex gap-1">
+            <button
+              v-for="lang in ['ts', 'c'] as const"
+              :key="lang"
+              @click="selectedLanguage = lang"
+              class="flex-1 px-2 py-1.5 rounded text-xs font-bold uppercase transition-all"
+              :class="selectedLanguage === lang 
+                ? 'bg-white/20 text-white' 
+                : 'glass-subtle text-white/40 hover:text-white'"
+            >
+              {{ lang }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Input Type Switch -->
+        <div class="w-32">
+          <label class="block text-[10px] text-white/40 mb-1">Input Type</label>
+          <div class="flex rounded-lg overflow-hidden border border-white/10">
+            <button
+              @click="useSample = true"
+              class="flex-1 px-2 py-1.5 text-xs font-bold transition-all"
+              :class="useSample 
+                ? 'bg-amber-500 text-black' 
+                : 'bg-black/30 text-white/40 hover:text-white'"
+            >
+              🧪 Sample
+            </button>
+            <button
+              @click="useSample = false"
+              class="flex-1 px-2 py-1.5 text-xs font-bold transition-all"
+              :class="!useSample 
+                ? 'bg-blue-500 text-white' 
+                : 'bg-black/30 text-white/40 hover:text-white'"
+            >
+              📄 Final
+            </button>
+          </div>
+        </div>
+
+        <!-- Run -->
+        <UButton
+          color="success"
+          :loading="isRunning"
+          :disabled="isRunning"
+          icon="i-heroicons-play"
+          @click="runDebug"
+        >
+          Run
+        </UButton>
+      </div>
+    </div>
+
+    <!-- Result -->
+    <div v-if="result" class="space-y-3">
+      <!-- Summary -->
+      <div
+        class="glass rounded-xl p-4 border-l-4"
+        :class="result.error || result.exitCode !== 0 ? 'border-red-500' : 'border-green-500'"
+      >
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span :class="`agent-${result.agent}`" class="px-2 py-1 rounded text-xs font-bold capitalize">
+              {{ result.agent }}
+            </span>
+            <span class="text-white/60 text-sm">
+              Day {{ result.day }} · P{{ result.part }} · {{ result.language.toUpperCase() }} · 
+              <span :class="result.useSample ? 'text-amber-400' : 'text-blue-400'">
+                {{ result.useSample ? 'Sample' : 'Final' }}
               </span>
-              <span v-else>▶️ Run</span>
-            </button>
+            </span>
           </div>
-        </div>
-
-        <!-- Quick preset buttons -->
-        <div class="flex flex-wrap gap-2">
-          <span class="text-gray-500 text-sm mr-2">Quick:</span>
-          <button
-            v-for="agent in agents"
-            :key="agent"
-            @click="selectedAgent = agent"
-            :class="[
-              'px-3 py-1 rounded-full text-sm font-medium transition-colors',
-              selectedAgent === agent
-                ? 'bg-gray-600 text-white'
-                : 'bg-gray-700 text-gray-400 hover:bg-gray-600',
-            ]"
-          >
-            {{ agentEmojis[agent] }} {{ agent }}
-          </button>
-          <span class="text-gray-600 mx-2">|</span>
-          <button
-            v-for="day in [0, 1, 2, 3]"
-            :key="day"
-            @click="selectedDay = day"
-            :class="[
-              'px-3 py-1 rounded-full text-sm font-medium transition-colors',
-              selectedDay === day
-                ? 'bg-gray-600 text-white'
-                : 'bg-gray-700 text-gray-400 hover:bg-gray-600',
-            ]"
-          >
-            Day {{ day }}
-          </button>
-        </div>
-      </div>
-
-      <!-- Result -->
-      <div v-if="result" class="space-y-6">
-        <!-- Summary Card -->
-        <div
-          :class="[
-            'rounded-xl p-6 shadow-xl border-l-4',
-            result.error || result.exitCode !== 0
-              ? 'bg-red-900/30 border-red-500'
-              : 'bg-green-900/30 border-green-500',
-          ]"
-        >
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-4">
-              <span class="text-3xl">{{
-                agentEmojis[result.agent as keyof typeof agentEmojis]
-              }}</span>
-              <div>
-                <h2 class="text-xl font-bold">
-                  {{ result.agent }} • Day {{ result.day }} Part
-                  {{ result.part }}
-                </h2>
-                <p class="text-gray-400">
-                  {{ result.language === "ts" ? "TypeScript" : "C" }} •
-                  {{ result.useSample ? "Sample Input" : "Final Input" }}
-                </p>
-              </div>
-            </div>
-            <div class="text-right">
-              <div
-                :class="[
-                  'text-2xl font-mono font-bold',
-                  result.error || result.exitCode !== 0
-                    ? 'text-red-400'
-                    : 'text-green-400',
-                ]"
-              >
-                {{
-                  result.error
-                    ? "ERROR"
-                    : result.exitCode === 0
-                    ? "SUCCESS"
-                    : `Exit ${result.exitCode}`
-                }}
-              </div>
-              <div class="text-gray-400">{{ formatTime(result.timeMs) }}</div>
-            </div>
-          </div>
-
-          <!-- Command -->
-          <div class="bg-gray-900/50 rounded-lg p-3 font-mono text-sm">
-            <span class="text-gray-500">$</span>
-            <span class="text-blue-400 ml-2">{{ result.command }}</span>
-          </div>
-        </div>
-
-        <!-- Error -->
-        <div
-          v-if="result.error"
-          class="bg-red-900/20 rounded-xl p-6 border border-red-800"
-        >
-          <h3 class="text-lg font-bold text-red-400 mb-3">❌ Error</h3>
-          <pre class="font-mono text-sm text-red-300 whitespace-pre-wrap">{{
-            result.error
-          }}</pre>
-        </div>
-
-        <!-- Stdout -->
-        <div class="bg-gray-800 rounded-xl p-6 shadow-xl">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-bold text-green-400">📤 stdout</h3>
-            <span class="text-gray-500 text-sm"
-              >{{ result.stdout.length }} chars</span
+          <div class="text-right">
+            <div
+              class="text-lg font-mono font-bold"
+              :class="result.error || result.exitCode !== 0 ? 'text-red-400' : 'text-green-400'"
             >
+              {{ result.error ? 'ERROR' : result.exitCode === 0 ? 'OK' : `Exit ${result.exitCode}` }}
+            </div>
+            <div class="text-xs text-white/40 font-mono">{{ fmt(result.timeMs) }}</div>
           </div>
-          <pre
-            v-if="result.stdout"
-            class="bg-gray-900 rounded-lg p-4 font-mono text-sm overflow-x-auto whitespace-pre-wrap text-gray-300"
-            >{{ result.stdout }}</pre
-          >
-          <p v-else class="text-gray-500 italic">No output</p>
         </div>
 
-        <!-- Stderr -->
-        <div class="bg-gray-800 rounded-xl p-6 shadow-xl">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-bold text-yellow-400">⚠️ stderr</h3>
-            <span class="text-gray-500 text-sm"
-              >{{ result.stderr.length }} chars</span
-            >
-          </div>
-          <pre
-            v-if="result.stderr"
-            class="bg-gray-900 rounded-lg p-4 font-mono text-sm overflow-x-auto whitespace-pre-wrap text-yellow-200"
-            >{{ result.stderr }}</pre
-          >
-          <p v-else class="text-gray-500 italic">No errors</p>
+        <!-- Command -->
+        <div class="mt-3 p-2 rounded bg-black/30 font-mono text-[11px] text-white/60 overflow-x-auto">
+          <span class="text-white/30">$</span> {{ result.command }}
         </div>
       </div>
 
-      <!-- Empty State -->
-      <div v-else class="text-center py-20 text-gray-500">
-        <div class="text-6xl mb-4">🔍</div>
-        <p class="text-xl">Sélectionnez une configuration et cliquez sur Run</p>
-        <p class="text-sm mt-2">L'output brut sera affiché ici</p>
+      <!-- Error -->
+      <div v-if="result.error" class="glass rounded-xl p-4 border border-red-500/30">
+        <h3 class="text-sm font-bold text-red-400 mb-2">❌ Error</h3>
+        <pre class="text-xs text-red-300 font-mono whitespace-pre-wrap">{{ result.error }}</pre>
       </div>
 
-      <!-- Back link -->
-      <div class="mt-12 text-center">
-        <NuxtLink
-          to="/"
-          class="text-blue-400 hover:text-blue-300 transition-colors"
-        >
-          ← Retour au Dashboard
-        </NuxtLink>
+      <!-- Stdout -->
+      <div class="glass rounded-xl p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-bold text-green-400">📤 stdout</h3>
+          <span class="text-[10px] text-white/30">{{ result.stdout.length }} chars</span>
+        </div>
+        <pre
+          v-if="result.stdout"
+          class="p-3 rounded bg-black/30 font-mono text-xs text-white/80 overflow-x-auto whitespace-pre-wrap max-h-60"
+        >{{ result.stdout }}</pre>
+        <p v-else class="text-white/30 text-xs italic">No output</p>
       </div>
+
+      <!-- Stderr -->
+      <div class="glass rounded-xl p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-sm font-bold text-yellow-400">⚠️ stderr</h3>
+          <span class="text-[10px] text-white/30">{{ result.stderr.length }} chars</span>
+        </div>
+        <pre
+          v-if="result.stderr"
+          class="p-3 rounded bg-black/30 font-mono text-xs text-yellow-200/80 overflow-x-auto whitespace-pre-wrap max-h-60"
+        >{{ result.stderr }}</pre>
+        <p v-else class="text-white/30 text-xs italic">No errors</p>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div v-else class="glass rounded-xl p-12 text-center">
+      <div class="text-4xl mb-3">🔍</div>
+      <p class="text-white/40 text-sm">Select a configuration and click Run</p>
     </div>
   </div>
 </template>

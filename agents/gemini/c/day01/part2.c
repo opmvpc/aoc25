@@ -6,11 +6,6 @@
 
 #include "../../tools/runner/c/common.h"
 
-// Fast floor division by 100 for potentially negative numbers
-static inline long long floor_div_100(long long a) {
-    return (a >= 0) ? (a / 100) : ((a - 99) / 100);
-}
-
 int main(void) {
     char* input = aoc_read_input();
     
@@ -21,42 +16,39 @@ int main(void) {
     char* p = input;
     
     while (*p) {
-        // Skip whitespace
-        while (*p && *p <= 32) p++;
-        if (!*p) break;
+        // Fast skip non-command chars
+        if (*p <= 32) { p++; continue; }
         
         char dir = *p++;
         int val = 0;
         
-        while (*p >= '0' && *p <= '9') {
+        // Fast integer parse
+        while (*p >= '0') {
             val = val * 10 + (*p++ - '0');
         }
         
-        if (dir == 'L') {
-            // Count multiples of 100 in [position-val, position-1]
-            // Formula: floor((pos - 1) / 100) - floor((pos - val - 1) / 100)
+        if (dir & 2) { // 'R' is 82 (01010010), 'L' is 76 (01001100). Bit 1 set for R.
+            // R
+            count += (position + val) / 100;
+            position = (position + val) % 100;
+        } else {
+            // L
+            // Formula: count += (pos==0 ? -1 : 0) - floor((pos - val - 1) / 100)
+            long long arg = position - val - 1;
+            long long term2 = arg / 100;
+            // Branchless floor correction
+            // If arg % 100 < 0, decrement term2
+            term2 -= (arg % 100 < 0);
             
-            // Optimization: pos is [0, 99].
-            // floor((pos - 1) / 100) is 0 unless pos=0, then -1.
-            long long term1 = (position == 0) ? -1 : 0;
-            
-            // term2 can be negative
-            long long term2 = floor_div_100(position - val - 1);
-            
-            count += (term1 - term2);
+            // term1 is -1 if position==0, else 0
+            // (position == 0) -> 1. We want -1. So -(position == 0).
+            count += -(position == 0) - term2;
             
             position = (position - val) % 100;
-            if (position < 0) position += 100;
-        } else {
-            // R
-            // Count multiples of 100 in [position+1, position+val]
-            // Formula: floor((pos + val) / 100) - floor(pos / 100)
-            
-            // Optimization: floor(pos / 100) is always 0 since pos in [0, 99]
-            // term1 is always positive
-            count += (position + val) / 100;
-            
-            position = (position + val) % 100;
+            // Branchless modulo correction: if negative, add 100
+            // (position >> 31) is -1 (all 1s) if neg, 0 if pos
+            // & 100 gives 100 if neg, 0 if pos
+            position += (position >> 31) & 100;
         }
     }
     

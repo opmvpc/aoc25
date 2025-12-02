@@ -19,14 +19,14 @@ int main(void) {
 
     while (*p) {
         char dir = *p++;
-        long long dist = 0;
+        int dist = 0;
         while (*p >= '0' && *p <= '9') {
             dist = dist * 10 + (*p - '0');
             p++;
         }
         while (*p == '\n' || *p == '\r') p++;
 
-        int step = (int)(dist % 100);
+        int step = dist % 100;
         if (dir == 'R') {
             pos += step;
             if (pos >= 100) pos -= 100;

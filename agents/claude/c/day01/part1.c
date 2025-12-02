@@ -10,7 +10,6 @@ int main(void) {
     char* input = aoc_read_input();
 
     AOC_TIMER_START(parse);
-    // Manual parsing for optimal performance
     char* ptr = input;
     AOC_TIMER_END(parse);
 
@@ -18,37 +17,34 @@ int main(void) {
     int position = 50;
     int count = 0;
 
-    while (*ptr) {
+    char c;
+    while ((c = *ptr)) {
         // Skip whitespace
-        while (*ptr == ' ' || *ptr == '\t') ptr++;
-        if (*ptr == '\0' || *ptr == '\r' || *ptr == '\n') {
+        if (c <= ' ') {
             ptr++;
             continue;
         }
 
         // Parse direction
-        char direction = *ptr++;
+        char dir = c;
+        ptr++;
 
-        // Parse distance using strtol (faster than atoi)
-        char* end;
-        int distance = (int)strtol(ptr, &end, 10);
-        ptr = end;
+        // Parse distance
+        int distance = 0;
+        while ((c = *ptr) >= '0' && c <= '9') {
+            distance = distance * 10 + (c - '0');
+            ptr++;
+        }
 
         // Update position
-        if (direction == 'L') {
+        if (dir == 'L') {
             position = (position - distance % 100 + 100) % 100;
         } else {
             position = (position + distance) % 100;
         }
 
-        // Check if at 0
-        if (position == 0) {
-            count++;
-        }
-
-        // Skip to next line
-        while (*ptr && *ptr != '\n') ptr++;
-        if (*ptr == '\n') ptr++;
+        // Count zeros
+        count += (position == 0);
     }
 
     long long result = count;

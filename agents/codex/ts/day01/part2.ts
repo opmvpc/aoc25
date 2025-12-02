@@ -13,30 +13,22 @@ export const solver: ISolver = {
     const len = s.length;
 
     for (let i = 0; i < len; ) {
-      const dir = s.charCodeAt(i); // 'L' or 'R'
-      i++;
+      const dir = s.charCodeAt(i++); // 'L' or 'R'
 
       let dist = 0;
-      while (i < len) {
-        const c = s.charCodeAt(i);
-        if (c >= 48 && c <= 57) {
-          dist = dist * 10 + (c - 48);
-          i++;
-        } else {
-          // Skip newline characters (\n or \r\n)
-          do {
-            i++;
-          } while (i < len && (s.charCodeAt(i) === 10 || s.charCodeAt(i) === 13));
-          break;
-        }
+      let c: number;
+      while (i < len && (c = s.charCodeAt(i)) >= 48 && c <= 57) {
+        dist = dist * 10 + (c - 48);
+        i++;
       }
+      while (i < len && ((c = s.charCodeAt(i)) === 10 || c === 13)) i++;
 
       // Count every click that lands on 0 using arithmetic instead of simulation.
-      let first =
-        dir === 82 /* 'R' */ ? (100 - pos) % 100 : pos; // step where 0 is hit first
+      let first = dir === 82 /* 'R' */ ? (100 - pos) % 100 : pos;
       if (first === 0) first = 100;
-      if (first <= dist) {
-        hits += 1 + Math.floor((dist - first) / 100);
+      const rem = dist - first;
+      if (rem >= 0) {
+        hits += 1 + Math.floor(rem / 100);
       }
 
       const step = dist % 100;
