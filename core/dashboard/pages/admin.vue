@@ -202,7 +202,9 @@ async function publishDay() {
           />
           <div class="grid grid-cols-2 gap-3">
             <div>
-              <label class="text-[10px] text-white/30 mb-1 block">Expected P1</label>
+              <label class="text-[10px] text-white/30 mb-1 block"
+                >Expected P1</label
+              >
               <input
                 v-model="form.sample_expected_p1"
                 class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm font-mono text-green-400 focus:border-green-500/50 focus:outline-none"
@@ -210,7 +212,9 @@ async function publishDay() {
               />
             </div>
             <div>
-              <label class="text-[10px] text-white/30 mb-1 block">Expected P2</label>
+              <label class="text-[10px] text-white/30 mb-1 block"
+                >Expected P2</label
+              >
               <input
                 v-model="form.sample_expected_p2"
                 class="w-full bg-black/30 border border-white/10 rounded-lg px-3 py-2 text-sm font-mono text-green-400 focus:border-green-500/50 focus:outline-none"

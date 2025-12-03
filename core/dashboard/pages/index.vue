@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import type { DayWithRuns, Agent, Language } from "~/types";
 
-const { data: days, pending, error, refresh } = await useFetch<DayWithRuns[]>("/api/days");
+const {
+  data: days,
+  pending,
+  error,
+  refresh,
+} = await useFetch<DayWithRuns[]>("/api/days");
 
 const agents: Agent[] = ["claude", "codex", "gemini"];
 const languages: Language[] = ["ts", "c"];
@@ -13,8 +18,10 @@ const modelNames: Record<Agent, string> = {
 };
 
 // Language filter
-const langFilter = ref<'all' | 'ts' | 'c'>('all');
-const filteredLangs = computed(() => langFilter.value === 'all' ? languages : [langFilter.value]);
+const langFilter = ref<"all" | "ts" | "c">("all");
+const filteredLangs = computed(() =>
+  langFilter.value === "all" ? languages : [langFilter.value]
+);
 
 // Running state
 const runningDay = ref<number | null>(null);
@@ -24,7 +31,10 @@ const runningItems = ref<Set<string>>(new Set());
 // Status grid
 const statusGrid = computed(() => {
   if (!days.value) return new Map();
-  const grid = new Map<string, { status: "success" | "error" | "pending" | "none"; timeMs: number | null }>();
+  const grid = new Map<
+    string,
+    { status: "success" | "error" | "pending" | "none"; timeMs: number | null }
+  >();
 
   for (const day of days.value) {
     for (const agent of agents) {
@@ -35,7 +45,12 @@ const statusGrid = computed(() => {
           let timeMs: number | null = null;
           if (run) {
             timeMs = run.time_ms;
-            status = run.is_correct === true ? "success" : run.is_correct === false ? "error" : "pending";
+            status =
+              run.is_correct === true
+                ? "success"
+                : run.is_correct === false
+                ? "error"
+                : "pending";
           }
           grid.set(`${day.id}-${agent}-${lang}-${part}`, { status, timeMs });
         }
@@ -46,15 +61,25 @@ const statusGrid = computed(() => {
 });
 
 function getCell(dayId: number, agent: Agent, lang: Language, part: 1 | 2) {
-  return statusGrid.value.get(`${dayId}-${agent}-${lang}-${part}`) || { status: "none" as const, timeMs: null };
+  return (
+    statusGrid.value.get(`${dayId}-${agent}-${lang}-${part}`) || {
+      status: "none" as const,
+      timeMs: null,
+    }
+  );
 }
 
-function getRank(dayId: number, agent: Agent, lang: Language, part: 1 | 2): number | null {
+function getRank(
+  dayId: number,
+  agent: Agent,
+  lang: Language,
+  part: 1 | 2
+): number | null {
   const times = agents
-    .map(a => ({ agent: a, time: getCell(dayId, a, lang, part) }))
-    .filter(t => t.time.status === "success" && t.time.timeMs !== null)
+    .map((a) => ({ agent: a, time: getCell(dayId, a, lang, part) }))
+    .filter((t) => t.time.status === "success" && t.time.timeMs !== null)
     .sort((a, b) => a.time.timeMs! - b.time.timeMs!);
-  const idx = times.findIndex(t => t.agent === agent);
+  const idx = times.findIndex((t) => t.agent === agent);
   return idx >= 0 ? idx + 1 : null;
 }
 
@@ -63,7 +88,8 @@ function getDayTotal(dayId: number, agent: Agent): number | null {
   for (const lang of filteredLangs.value) {
     for (const part of [1, 2] as const) {
       const cell = getCell(dayId, agent, lang, part);
-      if (cell.status === 'success' && cell.timeMs !== null) total += cell.timeMs;
+      if (cell.status === "success" && cell.timeMs !== null)
+        total += cell.timeMs;
       else return null;
     }
   }
@@ -72,19 +98,20 @@ function getDayTotal(dayId: number, agent: Agent): number | null {
 
 function getDayRank(dayId: number, agent: Agent): number | null {
   const times = agents
-    .map(a => ({ agent: a, total: getDayTotal(dayId, a) }))
-    .filter(t => t.total !== null)
+    .map((a) => ({ agent: a, total: getDayTotal(dayId, a) }))
+    .filter((t) => t.total !== null)
     .sort((a, b) => a.total! - b.total!);
-  const idx = times.findIndex(t => t.agent === agent);
+  const idx = times.findIndex((t) => t.agent === agent);
   return idx >= 0 ? idx + 1 : null;
 }
 
 const leaderboard = computed(() => {
-  const scores: Record<Agent, { wins: number; totalMs: number; days: number }> = {
-    claude: { wins: 0, totalMs: 0, days: 0 },
-    codex: { wins: 0, totalMs: 0, days: 0 },
-    gemini: { wins: 0, totalMs: 0, days: 0 },
-  };
+  const scores: Record<Agent, { wins: number; totalMs: number; days: number }> =
+    {
+      claude: { wins: 0, totalMs: 0, days: 0 },
+      codex: { wins: 0, totalMs: 0, days: 0 },
+      gemini: { wins: 0, totalMs: 0, days: 0 },
+    };
 
   if (!days.value) return [];
 
@@ -120,8 +147,19 @@ async function runDay(dayId: number, sample = false) {
           const key = `${agent}-${dayId}-${part}-${lang}`;
           runningItems.value.add(key);
           try {
-            await $fetch("/api/runs", { method: "POST", body: { agent, day: dayId, part, language: lang, useSample: sample } });
-          } catch (e) { console.error(e); }
+            await $fetch("/api/runs", {
+              method: "POST",
+              body: {
+                agent,
+                day: dayId,
+                part,
+                language: lang,
+                useSample: sample,
+              },
+            });
+          } catch (e) {
+            console.error(e);
+          }
           runningItems.value.delete(key);
         }
       }
@@ -145,13 +183,23 @@ async function runAll() {
   }
 }
 
-async function runSingle(dayId: number, agent: Agent, part: 1 | 2, lang: Language) {
+async function runSingle(
+  dayId: number,
+  agent: Agent,
+  part: 1 | 2,
+  lang: Language
+) {
   const key = `${agent}-${dayId}-${part}-${lang}`;
   runningItems.value.add(key);
   try {
-    await $fetch("/api/runs", { method: "POST", body: { agent, day: dayId, part, language: lang, useSample: false } });
+    await $fetch("/api/runs", {
+      method: "POST",
+      body: { agent, day: dayId, part, language: lang, useSample: false },
+    });
     await refresh();
-  } catch (e) { console.error(e); }
+  } catch (e) {
+    console.error(e);
+  }
   runningItems.value.delete(key);
 }
 
@@ -173,7 +221,8 @@ function fmtTotal(ms: number): string {
   return `${(ms / 1000).toFixed(2)}s`;
 }
 
-const medal = (r: number | null) => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : '';
+const medal = (r: number | null) =>
+  r === 1 ? "🥇" : r === 2 ? "🥈" : r === 3 ? "🥉" : "";
 </script>
 
 <template>
