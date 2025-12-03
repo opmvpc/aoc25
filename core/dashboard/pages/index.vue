@@ -172,11 +172,6 @@ function fmtTotal(ms: number): string {
   if (ms < 1000) return `${ms.toFixed(2)}ms`;
   return `${(ms / 1000).toFixed(2)}s`;
 }
-  if (ms < 1) return `${(ms * 1000).toFixed(2)}µs`;
-  if (ms < 1000) return `${ms.toFixed(2)}ms`;
-  if (ms < 60000) return `${(ms / 1000).toFixed(2)}s`;
-  return `${(ms / 60000).toFixed(2)}m`;
-}
 
 const medal = (r: number | null) => r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : '';
 </script>
