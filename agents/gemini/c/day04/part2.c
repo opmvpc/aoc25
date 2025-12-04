@@ -1,5 +1,5 @@
 /**
- * 🎄 Advent of Code 2025 - Day 04 Part 2
+ * 🎄 Advent of Code 2025 - Day 06 Part 2
  * Compile: clang -O2 -o part2 part2.c
  * Run: ./part2 < input.txt
  */

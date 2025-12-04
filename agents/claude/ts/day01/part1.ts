@@ -1,45 +1,46 @@
 /**
  * 🎄 Advent of Code 2025 - Day 01 Part 1
- * @see https://adventofcode.com/2025/day/1
+ * Dial starts at 50, count times it lands on 0 after rotations
  */
 
 import type { ISolver } from "../../tools/runner/types.js";
 
 export const solver: ISolver = {
   solve(input: string): string {
-    let position = 50;
+    let pos = 50;
     let count = 0;
     let i = 0;
     const len = input.length;
 
     while (i < len) {
-      // Skip whitespace
-      while (i < len && (input[i] === ' ' || input[i] === '\r')) i++;
-      if (i >= len) break;
+      const c = input.charCodeAt(i);
 
-      // Read direction
-      const direction = input[i++];
-      if (direction === '\n') continue;
+      // Skip non-L/R chars
+      if (c !== 76 && c !== 82) { // 'L' = 76, 'R' = 82
+        i++;
+        continue;
+      }
 
-      // Parse distance manually (faster than parseInt)
-      let distance = 0;
-      while (i < len && input[i] >= '0' && input[i] <= '9') {
-        distance = distance * 10 + (input.charCodeAt(i) - 48);
+      const isLeft = c === 76;
+      i++;
+
+      // Fast integer parse
+      let dist = 0;
+      let ch: number;
+      while (i < len && (ch = input.charCodeAt(i)) >= 48 && ch <= 57) {
+        dist = dist * 10 + ch - 48;
         i++;
       }
 
-      // Skip newline
-      if (i < len && input[i] === '\n') i++;
-
-      if (direction === 'L') {
-        position = (position - distance % 100 + 100) % 100;
+      // Update position - branchless modulo
+      if (isLeft) {
+        pos = ((pos - dist) % 100 + 100) % 100;
       } else {
-        position = (position + distance) % 100;
+        pos = (pos + dist) % 100;
       }
 
-      if (position === 0) {
-        count++;
-      }
+      // Count if at 0 (branchless)
+      count += +(pos === 0);
     }
 
     return count.toString();

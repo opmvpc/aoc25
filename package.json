@@ -15,6 +15,7 @@
     "init-db:reset": "tsx scripts/init-db.ts --reset",
     "publish-day": "tsx scripts/publish-day.ts",
     "sync-tools": "tsx scripts/sync-tools.ts",
+    "sync-agent-docs": "tsx scripts/sync-agent-docs.ts",
     "setup": "npm run scaffold && npm install && npm run sync-tools && npm run init-db && npm run publish-day -- 0",
     "dev": "npm run dev -w core/dashboard",
     "build": "npm run build -w core/runner && npm run build -w core/dashboard",

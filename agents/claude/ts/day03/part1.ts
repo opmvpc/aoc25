@@ -1,42 +1,44 @@
 /**
  * 🎄 Advent of Code 2025 - Day 03 Part 1
- * @see https://adventofcode.com/2025/day/3
+ * Pick 2 batteries to maximize 2-digit joltage
  */
 
 import type { ISolver } from "../../tools/runner/types.js";
 
 export const solver: ISolver = {
   solve(input: string): string {
-    const lines = input.trim().split("\n");
-    let totalJoltage = 0;
+    let total = 0;
+    let start = 0;
+    const len = input.length;
 
-    for (const line of lines) {
-      const len = line.length;
-      if (len < 2) continue;
+    while (start < len) {
+      // Find line end
+      let end = start;
+      while (end < len && input.charCodeAt(end) >= 48) end++;
 
-      // O(n) optimization: precompute max digit after each position
-      // maxAfter[i] = max(digit[i+1], digit[i+2], ..., digit[len-1])
-      const maxAfter = new Array(len);
-      maxAfter[len - 1] = 0; // no digit after last
+      const lineLen = end - start;
+      if (lineLen >= 2) {
+        // Single pass: track max digit seen (to the right) and best joltage
+        // First digit position must be < end-1 (need room for second digit)
+        let maxDigit = input.charCodeAt(end - 1) - 48; // last digit as initial max
+        let best = 0;
 
-      for (let i = len - 2; i >= 0; i--) {
-        const digit = line.charCodeAt(i + 1) - 48;
-        maxAfter[i] = Math.max(digit, maxAfter[i + 1]);
-      }
-
-      // Find max joltage: 10 * digit[i] + maxAfter[i]
-      let maxJoltage = 0;
-      for (let i = 0; i < len - 1; i++) {
-        const d1 = line.charCodeAt(i) - 48;
-        const joltage = d1 * 10 + maxAfter[i];
-        if (joltage > maxJoltage) {
-          maxJoltage = joltage;
+        // Scan from second-to-last to first (left to right for max tracking)
+        for (let i = end - 2; i >= start; i--) {
+          const d = input.charCodeAt(i) - 48;
+          // If this digit is first, best joltage = d*10 + maxDigit (to its right)
+          const joltage = d * 10 + maxDigit;
+          if (joltage > best) best = joltage;
+          if (d > maxDigit) maxDigit = d;
         }
+
+        total += best;
       }
 
-      totalJoltage += maxJoltage;
+      // Skip to next line
+      start = end + 1;
     }
 
-    return totalJoltage.toString();
+    return total.toString();
   },
 };

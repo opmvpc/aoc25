@@ -69,6 +69,7 @@ async function executeSolver(
 
     if (language === "c" && precompiledBinary) {
       // Run precompiled binary
+      console.log(`[Benchmark POST] Running C binary: ${precompiledBinary}`);
       proc = spawn(precompiledBinary, [], {
         cwd: agentDir,
         stdio: ["pipe", "pipe", "pipe"],
@@ -79,20 +80,27 @@ async function executeSolver(
     } else {
       // Run TypeScript solver via a wrapper script that reads from stdin
       const solverPath = join(agentDir, "ts", `day${dayStr}`, `part${part}.ts`);
+      console.log(`[Benchmark POST] Running TS solver: ${solverPath}`);
 
-      // Use tsx directly without shell to properly handle stdin
+      // Check if file exists
+      if (!existsSync(solverPath)) {
+        console.log(`[Benchmark POST] ERROR: TS file not found: ${solverPath}`);
+        resolve({ answer: "", timeMs: 0, error: `File not found: ${solverPath}` });
+        return;
+      }
+
+      // Use a proper async wrapper to avoid top-level await issues
       const runnerCode = `
-import { pathToFileURL } from 'url';
-import { readFileSync } from 'fs';
-const solver = (await import(pathToFileURL('${solverPath.replace(
-        /\\/g,
-        "/"
-      )}').href)).solver;
-const input = readFileSync(0, 'utf-8');
-const start = process.hrtime.bigint();
-const result = solver.solve(input);
-const end = process.hrtime.bigint();
-console.log(JSON.stringify({ answer: result, timeNs: Number(end - start) }));
+(async () => {
+  const { pathToFileURL } = await import('url');
+  const { readFileSync } = await import('fs');
+  const solver = (await import(pathToFileURL('${solverPath.replace(/\\/g, "/")}').href)).solver;
+  const input = readFileSync(0, 'utf-8');
+  const start = process.hrtime.bigint();
+  const result = solver.solve(input);
+  const end = process.hrtime.bigint();
+  console.log(JSON.stringify({ answer: result, timeNs: Number(end - start) }));
+})();
 `;
 
       // Don't use shell: true - it breaks stdin piping
@@ -128,7 +136,12 @@ console.log(JSON.stringify({ answer: result, timeNs: Number(end - start) }));
       const endTime = process.hrtime.bigint();
       const totalTimeMs = Number(endTime - startTime) / 1_000_000;
 
+      console.log(`[Benchmark POST] Process closed with code ${code}, language=${language}`);
+      console.log(`[Benchmark POST] stdout (first 200): ${stdout.substring(0, 200)}`);
+      console.log(`[Benchmark POST] stderr (first 200): ${stderr.substring(0, 200)}`);
+
       if (code !== 0) {
+        console.log(`[Benchmark POST] ERROR: Exit code ${code}`);
         resolve({
           answer: "",
           timeMs: totalTimeMs,
@@ -156,6 +169,7 @@ console.log(JSON.stringify({ answer: result, timeNs: Number(end - start) }));
 
         // Use internal timing (parse + solve) for accurate measurement
         const internalTimeMs = parseTimeMs + solveTimeMs;
+        console.log(`[Benchmark POST] C result: answer=${answer}, timeMs=${internalTimeMs}`);
         resolve({
           answer,
           timeMs: internalTimeMs > 0 ? internalTimeMs : totalTimeMs,
@@ -163,13 +177,17 @@ console.log(JSON.stringify({ answer: result, timeNs: Number(end - start) }));
       } else {
         // Parse TS output
         try {
-          const result = JSON.parse(stdout.trim());
+          const trimmedOutput = stdout.trim();
+          console.log(`[Benchmark POST] TS raw output: ${trimmedOutput}`);
+          const result = JSON.parse(trimmedOutput);
+          console.log(`[Benchmark POST] TS parsed: answer=${result.answer}, timeNs=${result.timeNs}`);
           resolve({
             answer: String(result.answer),
             timeMs: result.timeNs / 1_000_000,
           });
-        } catch {
-          resolve({ answer: stdout.trim(), timeMs: totalTimeMs });
+        } catch (e) {
+          console.log(`[Benchmark POST] TS parse error: ${e}`);
+          resolve({ answer: stdout.trim(), timeMs: totalTimeMs, error: `Parse error: ${e}` });
         }
       }
     });

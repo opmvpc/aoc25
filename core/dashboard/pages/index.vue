@@ -8,6 +8,11 @@ const {
   refresh,
 } = await useFetch<DayWithRuns[]>("/api/days");
 
+// Fetch implemented status
+const { data: implementedMap, refresh: refreshImplemented } = await useFetch<
+  Record<string, boolean>
+>("/api/runs/check-implemented");
+
 const agents: Agent[] = ["claude", "codex", "gemini"];
 const languages: Language[] = ["ts", "c"];
 
@@ -26,7 +31,26 @@ const filteredLangs = computed(() =>
 // Running state
 const runningDay = ref<number | null>(null);
 const runningAll = ref(false);
+const stopRequested = ref(false);
 const runningItems = ref<Set<string>>(new Set());
+const activeEventSource = ref<EventSource | null>(null);
+const runProgress = ref<{ completed: number; total: number } | null>(null);
+
+// Real-time results cache (updated via SSE)
+const realtimeResults = ref<
+  Map<string, { status: "success" | "error" | "pending"; timeMs: number }>
+>(new Map());
+
+// Check if a file is implemented
+function isImplemented(
+  agent: Agent,
+  dayId: number,
+  part: 1 | 2,
+  lang: Language
+): boolean {
+  const key = `${agent}-${dayId}-${part}-${lang}`;
+  return implementedMap.value?.[key] ?? false;
+}
 
 // Status grid
 const statusGrid = computed(() => {
@@ -61,6 +85,13 @@ const statusGrid = computed(() => {
 });
 
 function getCell(dayId: number, agent: Agent, lang: Language, part: 1 | 2) {
+  // Check realtime results first
+  const realtimeKey = `${dayId}-${agent}-${lang}-${part}`;
+  const realtime = realtimeResults.value.get(realtimeKey);
+  if (realtime) {
+    return realtime;
+  }
+
   return (
     statusGrid.value.get(`${dayId}-${agent}-${lang}-${part}`) || {
       status: "none" as const,
@@ -137,35 +168,89 @@ const leaderboard = computed(() => {
     .map(([agent, s], idx) => ({ agent: agent as Agent, rank: idx + 1, ...s }));
 });
 
-// Run handlers
+// Run handlers using SSE for real-time updates
+function runWithSSE(days: string, sample: boolean) {
+  return new Promise<void>((resolve, reject) => {
+    const url = `/api/runs/stream?days=${days}&sample=${sample}`;
+    const eventSource = new EventSource(url);
+    activeEventSource.value = eventSource;
+
+    eventSource.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+
+        if (data.type === "start") {
+          runProgress.value = { completed: 0, total: data.total };
+        } else if (data.type === "result") {
+          const result = data.data;
+          const key = `${result.day}-${result.agent}-${result.language}-${result.part}`;
+          const runKey = `${result.agent}-${result.day}-${result.part}-${result.language}`;
+
+          // Update realtime results with new Map to trigger reactivity
+          const newMap = new Map(realtimeResults.value);
+          newMap.set(key, {
+            status: result.error
+              ? "error"
+              : result.isCorrect === true
+              ? "success"
+              : result.isCorrect === false
+              ? "error"
+              : "pending",
+            timeMs: result.timeMs,
+          });
+          realtimeResults.value = newMap;
+
+          // Update running state
+          runningItems.value.delete(runKey);
+
+          // Update progress
+          if (data.progress) {
+            runProgress.value = data.progress;
+          }
+        } else if (data.type === "done") {
+          eventSource.close();
+          activeEventSource.value = null;
+          runProgress.value = null;
+          resolve();
+        } else if (data.type === "error") {
+          console.error("SSE error:", data.message);
+        }
+      } catch (e) {
+        console.error("Failed to parse SSE data:", e);
+      }
+    };
+
+    eventSource.onerror = () => {
+      eventSource.close();
+      activeEventSource.value = null;
+      runProgress.value = null;
+      reject(new Error("SSE connection failed"));
+    };
+  });
+}
+
 async function runDay(dayId: number, sample = false) {
   runningDay.value = dayId;
-  try {
-    for (const agent of agents) {
-      for (const part of [1, 2] as const) {
-        for (const lang of languages) {
-          const key = `${agent}-${dayId}-${part}-${lang}`;
-          runningItems.value.add(key);
-          try {
-            await $fetch("/api/runs", {
-              method: "POST",
-              body: {
-                agent,
-                day: dayId,
-                part,
-                language: lang,
-                useSample: sample,
-              },
-            });
-          } catch (e) {
-            console.error(e);
-          }
-          runningItems.value.delete(key);
+  // Don't clear realtime results - keep showing previous values
+
+  // Mark all implemented runs as running
+  for (const agent of agents) {
+    for (const part of [1, 2] as const) {
+      for (const lang of languages) {
+        if (isImplemented(agent, dayId, part, lang)) {
+          runningItems.value.add(`${agent}-${dayId}-${part}-${lang}`);
         }
       }
     }
-    await refresh();
+  }
+
+  try {
+    await runWithSSE(dayId.toString(), sample);
+    // No refresh needed - results are already in realtimeResults
+  } catch (e) {
+    console.error(e);
   } finally {
+    runningItems.value.clear();
     runningDay.value = null;
   }
 }
@@ -173,14 +258,46 @@ async function runDay(dayId: number, sample = false) {
 async function runAll() {
   if (!days.value) return;
   runningAll.value = true;
-  try {
-    for (const day of days.value) {
-      await runDay(day.id, false);
+  stopRequested.value = false;
+  // Don't clear realtime results - keep showing previous values
+
+  // Mark all implemented runs as running
+  for (const day of days.value) {
+    for (const agent of agents) {
+      for (const part of [1, 2] as const) {
+        for (const lang of languages) {
+          if (isImplemented(agent, day.id, part, lang)) {
+            runningItems.value.add(`${agent}-${day.id}-${part}-${lang}`);
+          }
+        }
+      }
     }
+  }
+
+  try {
+    await runWithSSE("all", false);
+    // No refresh needed - results are already in realtimeResults
+    await refreshImplemented();
+  } catch (e) {
+    console.error(e);
   } finally {
     runningAll.value = false;
+    stopRequested.value = false;
     runningItems.value.clear();
   }
+}
+
+function stopAll() {
+  stopRequested.value = true;
+  if (activeEventSource.value) {
+    activeEventSource.value.close();
+    activeEventSource.value = null;
+  }
+  runProgress.value = null;
+  runningItems.value.clear();
+  // Don't clear realtime results - keep showing completed values
+  runningAll.value = false;
+  runningDay.value = null;
 }
 
 async function runSingle(
@@ -190,13 +307,46 @@ async function runSingle(
   lang: Language
 ) {
   const key = `${agent}-${dayId}-${part}-${lang}`;
+  const realtimeKey = `${dayId}-${agent}-${lang}-${part}`;
   runningItems.value.add(key);
+  
   try {
-    await $fetch("/api/runs", {
-      method: "POST",
-      body: { agent, day: dayId, part, language: lang, useSample: false },
+    // Use SSE for real-time update
+    const url = `/api/runs/stream?days=${dayId}&sample=false&agents=${agent}&parts=${part}&languages=${lang}`;
+    const eventSource = new EventSource(url);
+    
+    await new Promise<void>((resolve, reject) => {
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          
+          if (data.type === "result") {
+            const result = data.data;
+            // Update realtime results immediately
+            realtimeResults.value = new Map(realtimeResults.value.set(realtimeKey, {
+              status: result.error
+                ? "error"
+                : result.isCorrect === true
+                ? "success"
+                : result.isCorrect === false
+                ? "error"
+                : "pending",
+              timeMs: result.timeMs,
+            }));
+          } else if (data.type === "done") {
+            eventSource.close();
+            resolve();
+          }
+        } catch (e) {
+          console.error("Failed to parse SSE data:", e);
+        }
+      };
+      
+      eventSource.onerror = () => {
+        eventSource.close();
+        reject(new Error("SSE connection failed"));
+      };
     });
-    await refresh();
   } catch (e) {
     console.error(e);
   }
@@ -234,18 +384,45 @@ const medal = (r: number | null) =>
       </h1>
 
       <div class="flex items-center gap-3">
-        <!-- Run All -->
+        <!-- Run All / Stop -->
         <UButton
+          v-if="!runningAll && !runningDay"
           size="xs"
           color="warning"
           variant="soft"
-          :loading="runningAll"
-          :disabled="runningAll || runningDay !== null"
           icon="i-heroicons-play"
           @click="runAll"
         >
           Run All
         </UButton>
+        <template v-else>
+          <UButton
+            size="xs"
+            color="error"
+            variant="soft"
+            icon="i-heroicons-stop"
+            @click="stopAll"
+          >
+            Stop
+          </UButton>
+          <!-- Progress indicator -->
+          <div
+            v-if="runProgress"
+            class="flex items-center gap-2 text-xs text-white/60"
+          >
+            <div class="w-24 h-1.5 bg-white/10 rounded-full overflow-hidden">
+              <div
+                class="h-full bg-yellow-500 transition-all duration-300"
+                :style="{
+                  width: `${(runProgress.completed / runProgress.total) * 100}%`,
+                }"
+              />
+            </div>
+            <span class="tabular-nums">
+              {{ runProgress.completed }}/{{ runProgress.total }}
+            </span>
+          </div>
+        </template>
 
         <!-- Language Filter -->
         <div class="flex items-center gap-1 glass-subtle px-2 py-1 rounded-lg">
@@ -254,7 +431,7 @@ const medal = (r: number | null) =>
             v-for="opt in (['all', 'ts', 'c'] as const)"
             :key="opt"
             @click="langFilter = opt"
-            class="px-2 py-0.5 rounded text-xs font-bold transition-all"
+            class="px-2 py-0.5 rounded-lg text-xs font-bold transition-all"
             :class="
               langFilter === opt
                 ? 'bg-yellow-500 text-black'
@@ -272,7 +449,7 @@ const medal = (r: number | null) =>
       <div
         v-for="e in leaderboard"
         :key="e.agent"
-        class="glass rounded-lg p-2 flex items-center gap-2"
+        class="glass rounded-xl p-2 flex items-center gap-2"
         :class="{ 'ring-1 ring-yellow-500/50': e.rank === 1 }"
       >
         <span class="text-xl">{{ medal(e.rank) || "🏅" }}</span>
@@ -316,7 +493,7 @@ const medal = (r: number | null) =>
       <div
         v-for="day in days"
         :key="day.id"
-        class="glass rounded-lg overflow-hidden"
+        class="glass rounded-xl overflow-hidden"
         :class="{ 'ring-1 ring-yellow-500/40': runningDay === day.id }"
       >
         <div class="flex items-stretch">
@@ -335,14 +512,14 @@ const medal = (r: number | null) =>
               <button
                 @click="runDay(day.id, true)"
                 :disabled="runningDay !== null || runningAll"
-                class="text-[8px] px-1 py-0.5 rounded bg-white/10 hover:bg-white/20 disabled:opacity-30"
+                class="text-[8px] px-1 py-0.5 rounded-md bg-white/10 hover:bg-white/20 disabled:opacity-30"
               >
                 S
               </button>
               <button
                 @click="runDay(day.id, false)"
                 :disabled="runningDay !== null || runningAll"
-                class="text-[8px] px-1 py-0.5 rounded bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 disabled:opacity-30"
+                class="text-[8px] px-1 py-0.5 rounded-md bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 disabled:opacity-30"
               >
                 ▶
               </button>
@@ -351,14 +528,14 @@ const medal = (r: number | null) =>
 
           <!-- Results Grid - Fixed columns -->
           <div class="flex-1 overflow-x-auto">
-            <table class="w-full text-[11px] table-fixed">
+            <table class="w-full text-xs table-fixed">
               <colgroup>
-                <col class="w-12" />
+                <col class="w-14" />
                 <template v-for="lang in filteredLangs" :key="lang">
-                  <col class="w-24" />
-                  <col class="w-24" />
+                  <col class="w-28" />
+                  <col class="w-28" />
                 </template>
-                <col v-if="day.id !== 0" class="w-28" />
+                <col v-if="day.id !== 0" class="w-32" />
               </colgroup>
               <thead>
                 <tr class="border-b border-white/5">
@@ -405,10 +582,20 @@ const medal = (r: number | null) =>
                       :key="part"
                       class="py-1 px-1"
                     >
+                      <!-- Not implemented -->
+                      <div
+                        v-if="!isImplemented(agent, day.id, part, lang)"
+                        class="w-full flex items-center justify-center px-1 py-0.5 text-white/20 text-[9px]"
+                        title="Not implemented"
+                      >
+                        ⏳
+                      </div>
+                      <!-- Implemented - clickable -->
                       <button
+                        v-else
                         @click="runSingle(day.id, agent, part, lang)"
                         :disabled="runningDay !== null || runningAll"
-                        class="w-full flex items-center justify-center gap-1 px-1 py-0.5 rounded transition-all hover:bg-white/10"
+                        class="w-full flex items-center justify-center gap-1 px-1 py-0.5 rounded-md transition-all hover:bg-white/10"
                         :class="{
                           'bg-green-500/15':
                             getCell(day.id, agent, lang, part).status ===
@@ -431,11 +618,11 @@ const medal = (r: number | null) =>
                           {{ medal(getRank(day.id, agent, lang, part)) }}
                         </span>
                         <span
-                          class="font-mono tabular-nums"
+                          class="font-mono tabular-nums text-sm"
                           :class="
                             getRank(day.id, agent, lang, part) === 1
-                              ? 'text-yellow-400 font-semibold'
-                              : 'text-white/70'
+                              ? 'text-yellow-400 font-bold'
+                              : 'text-white/80 font-medium'
                           "
                         >
                           {{
@@ -451,7 +638,7 @@ const medal = (r: number | null) =>
                   <td v-if="day.id !== 0" class="py-1 px-1">
                     <div
                       v-if="getDayTotal(day.id, agent) !== null"
-                      class="flex items-center justify-center gap-1 px-1.5 py-0.5 rounded font-mono tabular-nums"
+                      class="flex items-center justify-center gap-1 px-1.5 py-0.5 rounded font-mono tabular-nums text-sm font-medium"
                       :class="{
                         'bg-yellow-500/20 text-yellow-400 font-semibold': getDayRank(day.id, agent) === 1,
                         'bg-gray-400/15 text-gray-300': getDayRank(day.id, agent) === 2,

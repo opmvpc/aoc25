@@ -88,7 +88,7 @@ function fmt(ms: number): string {
               v-for="agent in agents"
               :key="agent"
               @click="selectedAgent = agent"
-              class="flex-1 px-2 py-1.5 rounded text-xs font-bold capitalize transition-all"
+              class="flex-1 px-2 py-1.5 rounded-lg text-xs font-bold capitalize transition-all"
               :class="
                 selectedAgent === agent
                   ? `agent-${agent}`
@@ -119,7 +119,7 @@ function fmt(ms: number): string {
               v-for="p in [1, 2] as const"
               :key="p"
               @click="selectedPart = p"
-              class="flex-1 px-2 py-1.5 rounded text-xs font-bold transition-all"
+              class="flex-1 px-2 py-1.5 rounded-lg text-xs font-bold transition-all"
               :class="
                 selectedPart === p
                   ? 'bg-white/20 text-white'
@@ -139,7 +139,7 @@ function fmt(ms: number): string {
               v-for="lang in ['ts', 'c'] as const"
               :key="lang"
               @click="selectedLanguage = lang"
-              class="flex-1 px-2 py-1.5 rounded text-xs font-bold uppercase transition-all"
+              class="flex-1 px-2 py-1.5 rounded-lg text-xs font-bold uppercase transition-all"
               :class="
                 selectedLanguage === lang
                   ? 'bg-white/20 text-white'
@@ -208,7 +208,7 @@ function fmt(ms: number): string {
           <div class="flex items-center gap-3">
             <span
               :class="`agent-${result.agent}`"
-              class="px-2 py-1 rounded text-xs font-bold capitalize"
+              class="px-2 py-1 rounded-lg text-xs font-bold capitalize"
             >
               {{ result.agent }}
             </span>
@@ -247,7 +247,7 @@ function fmt(ms: number): string {
 
         <!-- Command -->
         <div
-          class="mt-3 p-2 rounded bg-black/30 font-mono text-[11px] text-white/60 overflow-x-auto"
+          class="mt-3 p-2 rounded-lg bg-black/30 font-mono text-[11px] text-white/60 overflow-x-auto"
         >
           <span class="text-white/30">$</span> {{ result.command }}
         </div>
@@ -274,7 +274,7 @@ function fmt(ms: number): string {
         </div>
         <pre
           v-if="result.stdout"
-          class="p-3 rounded bg-black/30 font-mono text-xs text-white/80 overflow-x-auto whitespace-pre-wrap max-h-60"
+          class="p-3 rounded-lg bg-black/30 font-mono text-xs text-white/80 overflow-x-auto whitespace-pre-wrap max-h-60"
           >{{ result.stdout }}</pre
         >
         <p v-else class="text-white/30 text-xs italic">No output</p>
@@ -290,7 +290,7 @@ function fmt(ms: number): string {
         </div>
         <pre
           v-if="result.stderr"
-          class="p-3 rounded bg-black/30 font-mono text-xs text-yellow-200/80 overflow-x-auto whitespace-pre-wrap max-h-60"
+          class="p-3 rounded-lg bg-black/30 font-mono text-xs text-yellow-200/80 overflow-x-auto whitespace-pre-wrap max-h-60"
           >{{ result.stderr }}</pre
         >
         <p v-else class="text-white/30 text-xs italic">No errors</p>

@@ -1,56 +1,50 @@
 /**
  * 🎄 Advent of Code 2025 - Day 01 Part 1
- * Compile: clang -O2 -o part1 part1.c
- * Run: ./part1 < input.txt
+ * Dial at 50, count times it lands on 0 after rotations
  */
 
 #include "../../tools/runner/c/common.h"
 
 int main(void) {
     char* input = aoc_read_input();
-
-    AOC_TIMER_START(parse);
     char* ptr = input;
-    AOC_TIMER_END(parse);
 
     AOC_TIMER_START(solve);
-    int position = 50;
+    int pos = 50;
     int count = 0;
-
     char c;
+
     while ((c = *ptr)) {
-        // Skip whitespace
-        if (c <= ' ') {
+        // Fast skip non-L/R
+        if (c != 'L' && c != 'R') {
             ptr++;
             continue;
         }
 
-        // Parse direction
-        char dir = c;
+        int isLeft = (c == 'L');
         ptr++;
 
-        // Parse distance
-        int distance = 0;
-        while ((c = *ptr) >= '0' && c <= '9') {
-            distance = distance * 10 + (c - '0');
+        // Fast parse
+        int dist = 0;
+        while ((c = *ptr) >= '0') {
+            dist = dist * 10 + (c - '0');
             ptr++;
         }
 
         // Update position
-        if (dir == 'L') {
-            position = (position - distance % 100 + 100) % 100;
+        if (isLeft) {
+            pos = ((pos - dist) % 100 + 100) % 100;
         } else {
-            position = (position + distance) % 100;
+            pos = (pos + dist) % 100;
         }
 
-        // Count zeros
-        count += (position == 0);
+        // Branchless count
+        count += (pos == 0);
     }
 
-    long long result = count;
     AOC_TIMER_END(solve);
 
-    AOC_RESULT_INT(result);
+    AOC_RESULT_INT(count);
     aoc_cleanup(input);
     return 0;
 }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { shallowRef } from "vue";
 import type { BenchmarkSession, Agent, Language } from "~/types";
 
 const { data: benchmarks, refresh } = await useFetch<BenchmarkSession[]>(
@@ -18,60 +19,173 @@ const form = reactive({
 });
 
 const running = ref(false);
-const result = ref<BenchmarkSession | null>(null);
-const batchResult = ref<{
+const stopping = ref(false);
+const result = shallowRef<BenchmarkSession | null>(null);
+const batchResult = shallowRef<{
   ranking: Array<{
     rank: number;
     agent: string;
     avgTimeMs: number;
     isCorrect: boolean | null;
+    sessionId?: number;
   }>;
 } | null>(null);
+const errorMessage = ref<string | null>(null);
+
+// Real-time progress tracking
+const progress = ref<{ 
+  currentRun: number; 
+  totalRuns: number; 
+  currentAgent: number;
+  totalAgents: number;
+  phase: string;
+} | null>(null);
+const runProgress = ref<{
+  currentRun: number;
+  totalRuns: number;
+  percent: number;
+}>({ currentRun: 0, totalRuns: 0, percent: 0 });
+const realtimeResults = ref<Record<string, {
+  agent: string;
+  success: boolean;
+  avgTimeMs?: number;
+  isCorrect?: boolean | null;
+  error?: string;
+}>>({});
+const activeEventSource = ref<EventSource | null>(null);
+
+function stopBenchmark() {
+  stopping.value = true;
+  if (activeEventSource.value) {
+    activeEventSource.value.close();
+    activeEventSource.value = null;
+  }
+  running.value = false;
+  stopping.value = false;
+  progress.value = null;
+  runProgress.value = { currentRun: 0, totalRuns: 0, percent: 0 };
+}
 
 async function runBenchmark() {
   running.value = true;
+  stopping.value = false;
   result.value = null;
   batchResult.value = null;
+  realtimeResults.value = {};
+  progress.value = null;
+  runProgress.value = { currentRun: 0, totalRuns: 0, percent: 0 };
+  errorMessage.value = null;
+
+  // Capture current form values to avoid reactivity issues
+  const currentAgent = form.agent;
+  const currentDay = form.day;
+  const currentPart = form.part;
+  const currentLanguage = form.language;
+  const currentNumRuns = form.numRuns;
 
   try {
-    if (form.agent === "all") {
-      const res = await $fetch<{
-        ranking: Array<{
-          rank: number;
-          agent: string;
-          avgTimeMs: number;
-          isCorrect: boolean | null;
-        }>;
-      }>("/api/benchmarks/batch", {
-        method: "POST",
-        body: {
-          day: form.day,
-          part: form.part,
-          language: form.language,
-          agents: ["claude", "codex", "gemini"],
-          numRuns: form.numRuns,
-        },
-      });
-      batchResult.value = res;
+    if (currentAgent === "all") {
+      // Use SSE for parallel execution
+      await runWithSSE();
     } else {
+      // Single agent - use direct API
+      console.log('Running benchmark:', { agent: currentAgent, day: currentDay, part: currentPart, language: currentLanguage, numRuns: currentNumRuns });
       const res = await $fetch<BenchmarkSession>("/api/benchmarks", {
         method: "POST",
         body: {
-          agent: form.agent,
-          day: form.day,
-          part: form.part,
-          language: form.language,
-          numRuns: form.numRuns,
+          agent: currentAgent,
+          day: currentDay,
+          part: currentPart,
+          language: currentLanguage,
+          numRuns: currentNumRuns,
         },
       });
+      console.log('Benchmark result:', res);
       result.value = res;
     }
-    await refresh();
-  } catch (err) {
-    console.error("Benchmark failed:", err);
-  } finally {
+    // Refresh history without clearing current result
     running.value = false;
+    await refresh();
+  } catch (err: any) {
+    console.error("Benchmark failed:", err);
+    errorMessage.value = err?.data?.message || err?.message || 'Benchmark failed';
+    running.value = false;
+  } finally {
+    progress.value = null;
   }
+}
+
+async function runWithSSE(): Promise<void> {
+  // Capture current form values
+  const currentDay = form.day;
+  const currentPart = form.part;
+  const currentLanguage = form.language;
+  const currentNumRuns = form.numRuns;
+
+  return new Promise((resolve, reject) => {
+    const params = new URLSearchParams({
+      agents: agents.join(","),
+      day: currentDay.toString(),
+      part: currentPart.toString(),
+      language: currentLanguage,
+      numRuns: currentNumRuns.toString(),
+      concurrency: "3", // Run all 3 agents in parallel
+    });
+    console.log('Running SSE benchmark with params:', Object.fromEntries(params));
+
+    const eventSource = new EventSource(`/api/benchmarks/stream?${params}`);
+    activeEventSource.value = eventSource;
+
+    eventSource.addEventListener("progress", (event) => {
+      const data = JSON.parse(event.data);
+      progress.value = data;
+    });
+
+    eventSource.addEventListener("run-progress", (event) => {
+      const data = JSON.parse(event.data);
+      runProgress.value = {
+        currentRun: data.currentRun,
+        totalRuns: data.totalRuns,
+        percent: data.percent,
+      };
+    });
+
+    eventSource.addEventListener("result", (event) => {
+      const data = JSON.parse(event.data);
+      console.log('[Benchmark SSE] Received result:', data);
+      realtimeResults.value = {
+        ...realtimeResults.value,
+        [data.agent]: {
+          agent: data.agent,
+          success: data.success,
+          avgTimeMs: data.stats?.avg,
+          isCorrect: data.isCorrect,
+          error: data.error,
+        }
+      };
+    });
+
+    eventSource.addEventListener("done", (event) => {
+      const data = JSON.parse(event.data);
+      console.log('[Benchmark SSE] Done, ranking:', data.ranking);
+      batchResult.value = {
+        ranking: data.ranking || [],
+      };
+      eventSource.close();
+      activeEventSource.value = null;
+      resolve();
+    });
+
+    eventSource.addEventListener("error", (event) => {
+      eventSource.close();
+      activeEventSource.value = null;
+      if (stopping.value) {
+        resolve();
+      } else {
+        reject(new Error("SSE connection error"));
+      }
+    });
+  });
 }
 
 function fmt(ms: number | null | undefined): string {
@@ -115,7 +229,7 @@ const medal = (idx: number) => (idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉"
           <div class="flex gap-1">
             <button
               @click="form.agent = 'all'"
-              class="px-2 py-1.5 rounded text-xs font-bold transition-all"
+              class="px-2 py-1.5 rounded-lg text-xs font-bold transition-all"
               :class="
                 form.agent === 'all'
                   ? 'bg-yellow-500 text-black'
@@ -128,7 +242,7 @@ const medal = (idx: number) => (idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉"
               v-for="agent in agents"
               :key="agent"
               @click="form.agent = agent"
-              class="px-2 py-1.5 rounded text-xs font-bold capitalize transition-all"
+              class="px-2 py-1.5 rounded-lg text-xs font-bold capitalize transition-all"
               :class="
                 form.agent === agent
                   ? `agent-${agent}`
@@ -159,7 +273,7 @@ const medal = (idx: number) => (idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉"
               v-for="p in [1, 2] as const"
               :key="p"
               @click="form.part = p"
-              class="flex-1 px-2 py-1.5 rounded text-xs font-bold transition-all"
+              class="flex-1 px-2 py-1.5 rounded-lg text-xs font-bold transition-all"
               :class="
                 form.part === p
                   ? 'bg-white/20 text-white'
@@ -179,7 +293,7 @@ const medal = (idx: number) => (idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉"
               v-for="lang in languages"
               :key="lang"
               @click="form.language = lang"
-              class="flex-1 px-2 py-1.5 rounded text-xs font-bold uppercase transition-all"
+              class="flex-1 px-2 py-1.5 rounded-lg text-xs font-bold uppercase transition-all"
               :class="
                 form.language === lang
                   ? 'bg-white/20 text-white'
@@ -203,8 +317,9 @@ const medal = (idx: number) => (idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉"
           />
         </div>
 
-        <!-- Run -->
+        <!-- Run / Stop -->
         <UButton
+          v-if="!running"
           :color="form.agent === 'all' ? 'warning' : 'success'"
           :loading="running"
           :disabled="running"
@@ -213,6 +328,83 @@ const medal = (idx: number) => (idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉"
         >
           {{ form.agent === "all" ? "Battle!" : "Run" }}
         </UButton>
+        <UButton
+          v-else
+          color="error"
+          icon="i-heroicons-stop"
+          @click="stopBenchmark"
+        >
+          Stop
+        </UButton>
+      </div>
+
+      <!-- Progress indicator -->
+      <div v-if="running && (progress || runProgress.totalRuns > 0)" class="mt-3 pt-3 border-t border-white/10">
+        <div class="flex items-center justify-between text-xs mb-2">
+          <span class="text-white/60">
+            <template v-if="runProgress.totalRuns > 0">
+              Run {{ runProgress.currentRun }}/{{ runProgress.totalRuns }}
+            </template>
+            <template v-else-if="progress">
+              Agent {{ progress.currentAgent }}/{{ progress.totalAgents }}
+            </template>
+            <template v-else>
+              Starting...
+            </template>
+          </span>
+          <span class="text-white/40">
+            <template v-if="runProgress.totalRuns > 0">
+              {{ runProgress.percent }}%
+            </template>
+            <template v-else-if="progress">
+              {{ progress.phase }}
+            </template>
+          </span>
+        </div>
+        <div class="w-full bg-white/10 rounded-full h-1.5 overflow-hidden">
+          <div
+            class="bg-yellow-500 h-1.5 rounded-full transition-all duration-150"
+            :style="{ 
+              width: runProgress.totalRuns > 0 
+                ? `${runProgress.percent}%` 
+                : progress 
+                  ? `${(progress.currentAgent / progress.totalAgents) * 100}%`
+                  : '0%'
+            }"
+          ></div>
+        </div>
+      </div>
+
+      <!-- Real-time results preview -->
+      <div v-if="running && Object.keys(realtimeResults).length > 0" class="mt-3 pt-3 border-t border-white/10">
+        <div class="flex gap-2 flex-wrap">
+          <div
+            v-for="agent in agents"
+            :key="agent"
+            class="flex items-center gap-2 glass-subtle rounded-lg px-2 py-1"
+          >
+            <span :class="`agent-${agent}`" class="px-1.5 py-0.5 rounded text-[10px] font-bold capitalize">
+              {{ agent.slice(0, 3) }}
+            </span>
+            <template v-if="realtimeResults[agent]">
+              <span v-if="realtimeResults[agent]?.success" class="text-green-400 text-xs font-mono">
+                {{ fmt(realtimeResults[agent]?.avgTimeMs) }}
+              </span>
+              <span v-else class="text-red-400 text-[10px]">
+                {{ realtimeResults[agent]?.error?.slice(0, 20) || 'Error' }}
+              </span>
+            </template>
+            <span v-else class="text-white/30 text-xs">⏳</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div v-if="errorMessage" class="glass rounded-xl p-4 ring-1 ring-red-500/30">
+      <div class="flex items-center gap-2 text-red-400">
+        <span class="text-lg">⚠️</span>
+        <span class="text-sm font-medium">{{ errorMessage }}</span>
       </div>
     </div>
 

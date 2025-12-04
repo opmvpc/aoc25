@@ -3,7 +3,20 @@ import type { Day } from "~/types";
 
 const { data: days, refresh } = await useFetch<Day[]>("/api/days");
 
-const selectedDay = ref<number>(1);
+// Auto-select day based on current date (December = AoC month)
+function getDefaultDay(): number {
+  const now = new Date();
+  const month = now.getMonth(); // 0-indexed, so December = 11
+  const day = now.getDate();
+  
+  // Only auto-select if we're in December
+  if (month === 11) {
+    return Math.min(day, 12); // Max is 12
+  }
+  return 1;
+}
+
+const selectedDay = ref<number>(getDefaultDay());
 const saving = ref(false);
 const publishing = ref(false);
 const message = ref<{ type: "success" | "error"; text: string } | null>(null);
@@ -97,19 +110,19 @@ async function publishDay() {
 <template>
   <div class="max-w-7xl mx-auto">
     <!-- Header -->
-    <div class="flex items-center justify-between mb-4">
-      <div class="flex items-center gap-4">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+      <div class="flex flex-col sm:flex-row sm:items-center gap-4">
         <h1 class="text-xl font-black flex items-center gap-2">
           <span class="text-yellow-400">⚙️</span> Admin
         </h1>
 
-        <!-- Day Selector -->
-        <div class="flex items-center gap-1">
+        <!-- Day Selector - Responsive grid -->
+        <div class="grid grid-cols-6 sm:flex sm:items-center gap-1">
           <button
             v-for="n in 12"
             :key="n"
             @click="selectedDay = n"
-            class="w-8 h-8 rounded text-xs font-bold transition-all"
+            class="w-full sm:w-8 h-8 rounded-lg text-xs font-bold transition-all"
             :class="
               selectedDay === n
                 ? 'bg-yellow-500 text-black'
@@ -141,7 +154,7 @@ async function publishDay() {
         >
           💾 Save
         </UButton>
-        <NuxtLink to="/" class="text-xs text-white/30 hover:text-white ml-2"
+        <NuxtLink to="/" class="text-xs text-white/30 hover:text-white ml-2 hidden md:inline"
           >← Back</NuxtLink
         >
       </div>
@@ -156,8 +169,8 @@ async function publishDay() {
       :ui="{ title: 'text-sm' }"
     />
 
-    <!-- Grid Layout -->
-    <div class="grid grid-cols-2 gap-4">
+    <!-- Grid Layout - Responsive -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <!-- Left Column: Puzzle Descriptions -->
       <div class="space-y-4">
         <!-- Part 1 Description -->

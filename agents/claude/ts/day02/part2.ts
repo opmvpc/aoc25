@@ -1,88 +1,109 @@
 /**
  * 🎄 Advent of Code 2025 - Day 02 Part 2
- * @see https://adventofcode.com/2025/day/2
+ * Find IDs that are pattern repeated 2+ times (e.g., 1212, 123123123, 1111)
  */
 
 import type { ISolver } from "../../tools/runner/types.js";
 
-function generateInvalids(start: number, end: number): Set<number> {
-  const invalids = new Set<number>();
-  const startLen = start.toString().length;
-  const endLen = end.toString().length;
+// Pre-compute powers of 10
+const POW10 = new Array(20);
+POW10[0] = 1;
+for (let i = 1; i < 20; i++) POW10[i] = POW10[i - 1] * 10;
 
-  // For each possible total length
-  for (let totalLen = startLen; totalLen <= endLen; totalLen++) {
-    // For each possible pattern length that divides totalLen
-    for (let patternLen = 1; patternLen <= totalLen / 2; patternLen++) {
-      if (totalLen % patternLen !== 0) continue;
+function countDigits(n: number): number {
+  if (n < 10) return 1;
+  if (n < 100) return 2;
+  if (n < 1000) return 3;
+  if (n < 10000) return 4;
+  if (n < 100000) return 5;
+  if (n < 1000000) return 6;
+  if (n < 10000000) return 7;
+  if (n < 100000000) return 8;
+  if (n < 1000000000) return 9;
+  if (n < 10000000000) return 10;
+  return Math.floor(Math.log10(n)) + 1;
+}
 
-      const repeatCount = totalLen / patternLen;
-      if (repeatCount < 2) continue;
-
-      // Generate all patterns of this length (no leading zero)
-      const minPattern = Math.pow(10, patternLen - 1);
-      const maxPattern = Math.pow(10, patternLen) - 1;
-
-      for (let pattern = minPattern; pattern <= maxPattern; pattern++) {
-        // Build repeated number
-        let repeated = 0;
-        let multiplier = 1;
-        for (let i = 0; i < repeatCount; i++) {
-          repeated += pattern * multiplier;
-          multiplier *= Math.pow(10, patternLen);
-        }
-
-        // Check if in range
-        if (repeated >= start && repeated <= end) {
-          invalids.add(repeated);
-        } else if (repeated > end) {
-          break; // No point continuing
-        }
-      }
-    }
+// Compute multiplier for repeating pattern: 1 + 10^p + 10^2p + ... + 10^((r-1)*p)
+// = (10^(r*p) - 1) / (10^p - 1)
+function getMultiplier(patternLen: number, repeatCount: number): number {
+  let mult = 0;
+  let power = 1;
+  for (let i = 0; i < repeatCount; i++) {
+    mult += power;
+    power *= POW10[patternLen];
   }
-
-  return invalids;
+  return mult;
 }
 
 export const solver: ISolver = {
   solve(input: string): string {
-    const text = input.trim();
-
-    // Parse all ranges
-    const ranges: [number, number][] = [];
-    let i = 0;
-
-    while (i < text.length) {
-      while (i < text.length && (text[i] === ',' || text[i] === ' ' || text[i] === '\n')) {
-        i++;
-      }
-
-      if (i >= text.length) break;
-
-      let start = 0;
-      while (i < text.length && text[i] >= '0' && text[i] <= '9') {
-        start = start * 10 + (text.charCodeAt(i) - 48);
-        i++;
-      }
-
-      if (i < text.length && text[i] === '-') i++;
-
-      let end = 0;
-      while (i < text.length && text[i] >= '0' && text[i] <= '9') {
-        end = end * 10 + (text.charCodeAt(i) - 48);
-        i++;
-      }
-
-      ranges.push([start, end]);
-    }
-
-    // For each range, generate invalids directly
     let sum = 0;
-    for (const [start, end] of ranges) {
-      const invalids = generateInvalids(start, end);
-      for (const n of invalids.values()) {
-        sum += n;
+    let i = 0;
+    const len = input.length;
+
+    while (i < len) {
+      // Skip separators
+      while (i < len) {
+        const c = input.charCodeAt(i);
+        if (c >= 48 && c <= 57) break;
+        i++;
+      }
+      if (i >= len) break;
+
+      // Parse start
+      let start = 0;
+      while (i < len) {
+        const c = input.charCodeAt(i);
+        if (c < 48 || c > 57) break;
+        start = start * 10 + c - 48;
+        i++;
+      }
+
+      // Skip dash
+      while (i < len && input.charCodeAt(i) === 45) i++;
+
+      // Parse end
+      let end = 0;
+      while (i < len) {
+        const c = input.charCodeAt(i);
+        if (c < 48 || c > 57) break;
+        end = end * 10 + c - 48;
+        i++;
+      }
+
+      // Track seen values to avoid duplicates (e.g., 111111 = 11*3 or 111*2)
+      const seen = new Set<number>();
+
+      const startLen = countDigits(start);
+      const endLen = countDigits(end);
+
+      for (let totalLen = startLen; totalLen <= endLen; totalLen++) {
+        // Try all pattern lengths that divide totalLen
+        for (let patternLen = 1; patternLen <= totalLen >> 1; patternLen++) {
+          if (totalLen % patternLen !== 0) continue;
+
+          const repeatCount = totalLen / patternLen;
+          if (repeatCount < 2) continue;
+
+          const multiplier = getMultiplier(patternLen, repeatCount);
+          let minPattern = POW10[patternLen - 1];
+          let maxPattern = POW10[patternLen] - 1;
+
+          // Clamp to range
+          const minFromStart = Math.ceil(start / multiplier);
+          const maxFromEnd = Math.floor(end / multiplier);
+          if (minFromStart > minPattern) minPattern = minFromStart;
+          if (maxFromEnd < maxPattern) maxPattern = maxFromEnd;
+
+          for (let pattern = minPattern; pattern <= maxPattern; pattern++) {
+            const repeated = pattern * multiplier;
+            if (!seen.has(repeated)) {
+              seen.add(repeated);
+              sum += repeated;
+            }
+          }
+        }
       }
     }
 

@@ -1,60 +1,53 @@
 /**
  * 🎄 Advent of Code 2025 - Day 01 Part 2
- * Compile: clang -O2 -o part2 part2.c
- * Run: ./part2 < input.txt
+ * Count ALL zero crossings (during and at end of rotations)
  */
 
 #include "../../tools/runner/c/common.h"
 
 int main(void) {
     char* input = aoc_read_input();
-
-    AOC_TIMER_START(parse);
     char* ptr = input;
-    AOC_TIMER_END(parse);
 
     AOC_TIMER_START(solve);
-    int position = 50;
+    int pos = 50;
     long long count = 0;
-
     char c;
+
     while ((c = *ptr)) {
-        // Skip whitespace
-        if (c <= ' ') {
+        // Fast skip non-L/R
+        if (c != 'L' && c != 'R') {
             ptr++;
             continue;
         }
 
-        // Parse direction
-        char dir = c;
+        int isLeft = (c == 'L');
         ptr++;
 
-        // Parse distance
-        long distance = 0;
-        while ((c = *ptr) >= '0' && c <= '9') {
-            distance = distance * 10 + (c - '0');
+        // Fast parse
+        long dist = 0;
+        while ((c = *ptr) >= '0') {
+            dist = dist * 10 + (c - '0');
             ptr++;
         }
 
-        // Process based on direction
-        if (dir == 'L') {
-            // Left rotation
-            long quotient = distance / 100;
-            count += quotient;
-            int remainder = distance % 100;
-            count += (remainder >= position) & (position != 0);
-            position = (position - remainder + 100) % 100;
+        if (isLeft) {
+            // Full rotations + partial crossing
+            long fullRot = dist / 100;
+            int rem = dist % 100;
+            count += fullRot;
+            count += (rem >= pos) & (pos != 0);
+            pos = ((pos - rem) % 100 + 100) % 100;
         } else {
-            // Right rotation
-            count += (position + distance) / 100;
-            position = (position + distance) % 100;
+            // (pos + dist) / 100 = number of crossings
+            count += (pos + dist) / 100;
+            pos = (pos + dist) % 100;
         }
     }
 
-    long long result = count;
     AOC_TIMER_END(solve);
 
-    AOC_RESULT_INT(result);
+    AOC_RESULT_INT(count);
     aoc_cleanup(input);
     return 0;
 }

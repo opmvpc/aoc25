@@ -127,6 +127,14 @@ int main(void) {
 
 export const GITKEEP = "";
 
+// Gemini settings to disable web search
+export const GEMINI_SETTINGS_JSON = `{
+  "tools": {
+    "exclude": ["WebSearchTool", "WebFetchTool"]
+  }
+}
+`;
+
 // ═══════════════════════════════════════════════════════════════
 // Scaffold Options
 // ═══════════════════════════════════════════════════════════════
@@ -207,6 +215,15 @@ export async function scaffoldAgents(options: ScaffoldOptions): Promise<void> {
       GITKEEP,
       silent
     );
+
+    // Gemini-specific: .gemini/settings.json to disable web search
+    if (agent === "gemini") {
+      await writeIfNotExists(
+        join(agentDir, ".gemini", "settings.json"),
+        GEMINI_SETTINGS_JSON,
+        silent
+      );
+    }
 
     // Days 0-days - TS and C templates
     for (let day = 0; day <= days; day++) {
