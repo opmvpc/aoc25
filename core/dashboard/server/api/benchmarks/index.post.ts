@@ -85,7 +85,11 @@ async function executeSolver(
       // Check if file exists
       if (!existsSync(solverPath)) {
         console.log(`[Benchmark POST] ERROR: TS file not found: ${solverPath}`);
-        resolve({ answer: "", timeMs: 0, error: `File not found: ${solverPath}` });
+        resolve({
+          answer: "",
+          timeMs: 0,
+          error: `File not found: ${solverPath}`,
+        });
         return;
       }
 
@@ -94,7 +98,10 @@ async function executeSolver(
 (async () => {
   const { pathToFileURL } = await import('url');
   const { readFileSync } = await import('fs');
-  const solver = (await import(pathToFileURL('${solverPath.replace(/\\/g, "/")}').href)).solver;
+  const solver = (await import(pathToFileURL('${solverPath.replace(
+    /\\/g,
+    "/"
+  )}').href)).solver;
   const input = readFileSync(0, 'utf-8');
   const start = process.hrtime.bigint();
   const result = solver.solve(input);
@@ -136,9 +143,15 @@ async function executeSolver(
       const endTime = process.hrtime.bigint();
       const totalTimeMs = Number(endTime - startTime) / 1_000_000;
 
-      console.log(`[Benchmark POST] Process closed with code ${code}, language=${language}`);
-      console.log(`[Benchmark POST] stdout (first 200): ${stdout.substring(0, 200)}`);
-      console.log(`[Benchmark POST] stderr (first 200): ${stderr.substring(0, 200)}`);
+      console.log(
+        `[Benchmark POST] Process closed with code ${code}, language=${language}`
+      );
+      console.log(
+        `[Benchmark POST] stdout (first 200): ${stdout.substring(0, 200)}`
+      );
+      console.log(
+        `[Benchmark POST] stderr (first 200): ${stderr.substring(0, 200)}`
+      );
 
       if (code !== 0) {
         console.log(`[Benchmark POST] ERROR: Exit code ${code}`);
@@ -169,7 +182,9 @@ async function executeSolver(
 
         // Use internal timing (parse + solve) for accurate measurement
         const internalTimeMs = parseTimeMs + solveTimeMs;
-        console.log(`[Benchmark POST] C result: answer=${answer}, timeMs=${internalTimeMs}`);
+        console.log(
+          `[Benchmark POST] C result: answer=${answer}, timeMs=${internalTimeMs}`
+        );
         resolve({
           answer,
           timeMs: internalTimeMs > 0 ? internalTimeMs : totalTimeMs,
@@ -180,14 +195,20 @@ async function executeSolver(
           const trimmedOutput = stdout.trim();
           console.log(`[Benchmark POST] TS raw output: ${trimmedOutput}`);
           const result = JSON.parse(trimmedOutput);
-          console.log(`[Benchmark POST] TS parsed: answer=${result.answer}, timeNs=${result.timeNs}`);
+          console.log(
+            `[Benchmark POST] TS parsed: answer=${result.answer}, timeNs=${result.timeNs}`
+          );
           resolve({
             answer: String(result.answer),
             timeMs: result.timeNs / 1_000_000,
           });
         } catch (e) {
           console.log(`[Benchmark POST] TS parse error: ${e}`);
-          resolve({ answer: stdout.trim(), timeMs: totalTimeMs, error: `Parse error: ${e}` });
+          resolve({
+            answer: stdout.trim(),
+            timeMs: totalTimeMs,
+            error: `Parse error: ${e}`,
+          });
         }
       }
     });

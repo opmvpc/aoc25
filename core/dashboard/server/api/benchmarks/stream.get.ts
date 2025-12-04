@@ -78,11 +78,15 @@ async function executeSolver(
     } else {
       const solverPath = join(agentDir, "ts", `day${dayStr}`, `part${part}.ts`);
       console.log(`[Benchmark] Running TS solver: ${solverPath}`);
-      
+
       // Check if file exists
       if (!existsSync(solverPath)) {
         console.log(`[Benchmark] ERROR: TS file not found: ${solverPath}`);
-        resolve({ answer: "", timeMs: 0, error: `File not found: ${solverPath}` });
+        resolve({
+          answer: "",
+          timeMs: 0,
+          error: `File not found: ${solverPath}`,
+        });
         return;
       }
 
@@ -91,7 +95,10 @@ async function executeSolver(
 (async () => {
   const { pathToFileURL } = await import('url');
   const { readFileSync } = await import('fs');
-  const solver = (await import(pathToFileURL('${solverPath.replace(/\\/g, "/")}').href)).solver;
+  const solver = (await import(pathToFileURL('${solverPath.replace(
+    /\\/g,
+    "/"
+  )}').href)).solver;
   const input = readFileSync(0, 'utf-8');
   const start = process.hrtime.bigint();
   const result = solver.solve(input);
@@ -130,14 +137,20 @@ async function executeSolver(
       clearTimeout(timeout);
       const endTime = process.hrtime.bigint();
       const totalTimeMs = Number(endTime - startTime) / 1_000_000;
-      
-      console.log(`[Benchmark] Process closed with code ${code}, language=${language}`);
+
+      console.log(
+        `[Benchmark] Process closed with code ${code}, language=${language}`
+      );
       console.log(`[Benchmark] stdout: ${stdout.substring(0, 200)}`);
       console.log(`[Benchmark] stderr: ${stderr.substring(0, 200)}`);
 
       if (code !== 0) {
         console.log(`[Benchmark] ERROR: Exit code ${code}`);
-        resolve({ answer: "", timeMs: totalTimeMs, error: stderr || `Exit ${code}` });
+        resolve({
+          answer: "",
+          timeMs: totalTimeMs,
+          error: stderr || `Exit ${code}`,
+        });
         return;
       }
 
@@ -158,7 +171,9 @@ async function executeSolver(
         }
 
         const internalTimeMs = parseTimeMs + solveTimeMs;
-        console.log(`[Benchmark] C result: answer=${answer}, timeMs=${internalTimeMs}`);
+        console.log(
+          `[Benchmark] C result: answer=${answer}, timeMs=${internalTimeMs}`
+        );
         resolve({
           answer,
           timeMs: internalTimeMs > 0 ? internalTimeMs : totalTimeMs,
@@ -168,14 +183,20 @@ async function executeSolver(
           const trimmedOutput = stdout.trim();
           console.log(`[Benchmark] TS raw output: ${trimmedOutput}`);
           const result = JSON.parse(trimmedOutput);
-          console.log(`[Benchmark] TS parsed result: answer=${result.answer}, timeNs=${result.timeNs}`);
+          console.log(
+            `[Benchmark] TS parsed result: answer=${result.answer}, timeNs=${result.timeNs}`
+          );
           resolve({
             answer: String(result.answer),
             timeMs: result.timeNs / 1_000_000,
           });
         } catch (e) {
           console.log(`[Benchmark] TS parse error: ${e}`);
-          resolve({ answer: stdout.trim(), timeMs: totalTimeMs, error: `Parse error: ${e}` });
+          resolve({
+            answer: stdout.trim(),
+            timeMs: totalTimeMs,
+            error: `Parse error: ${e}`,
+          });
         }
       }
     });
@@ -288,7 +309,7 @@ async function runBenchmark(
 
     times.push(result.timeMs);
     if (i === 0) answer = result.answer;
-    
+
     // Notify progress for each run
     if (onRunComplete) {
       onRunComplete(i + 1, task.numRuns, result.timeMs);
@@ -312,7 +333,8 @@ async function runBenchmark(
     .prepare("SELECT answer_p1, answer_p2 FROM days WHERE id = ?")
     .get(task.day) as { answer_p1: string | null; answer_p2: string | null };
 
-  const expectedAnswer = task.part === 1 ? dayData.answer_p1 : dayData.answer_p2;
+  const expectedAnswer =
+    task.part === 1 ? dayData.answer_p1 : dayData.answer_p2;
   const isCorrect = expectedAnswer !== null ? answer === expectedAnswer : null;
 
   // Compute stats
@@ -379,17 +401,28 @@ export default defineEventHandler(async (event) => {
 
   // Parse parameters
   const agents = query.agents
-    ? (query.agents as string).split(",").filter((a) => ["claude", "codex", "gemini"].includes(a))
+    ? (query.agents as string)
+        .split(",")
+        .filter((a) => ["claude", "codex", "gemini"].includes(a))
     : ["claude", "codex", "gemini"];
 
   const day = parseInt(query.day as string) || 0;
   const part = parseInt(query.part as string) || 1;
   const language = (query.language as "ts" | "c") || "ts";
-  const numRuns = Math.min(1000, Math.max(1, parseInt(query.numRuns as string) || 100));
-  const concurrency = Math.min(3, Math.max(1, parseInt(query.concurrency as string) || 3));
+  const numRuns = Math.min(
+    1000,
+    Math.max(1, parseInt(query.numRuns as string) || 100)
+  );
+  const concurrency = Math.min(
+    3,
+    Math.max(1, parseInt(query.concurrency as string) || 3)
+  );
 
   if (day < 0 || day > 12) {
-    throw createError({ statusCode: 400, message: "Invalid day (must be 0-12)" });
+    throw createError({
+      statusCode: 400,
+      message: "Invalid day (must be 0-12)",
+    });
   }
   if (part !== 1 && part !== 2) {
     throw createError({ statusCode: 400, message: "Invalid part" });
@@ -418,7 +451,9 @@ export default defineEventHandler(async (event) => {
   });
 
   const sendEvent = (eventType: string, data: unknown) => {
-    event.node.res.write(`event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`);
+    event.node.res.write(
+      `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`
+    );
   };
 
   // Build task list
@@ -437,12 +472,12 @@ export default defineEventHandler(async (event) => {
   const results: Awaited<ReturnType<typeof runBenchmark>>[] = [];
 
   // Send initial progress
-  sendEvent("progress", { 
-    currentRun: 0, 
-    totalRuns, 
+  sendEvent("progress", {
+    currentRun: 0,
+    totalRuns,
     currentAgent: 0,
     totalAgents,
-    phase: "starting" 
+    phase: "starting",
   });
 
   // Run benchmarks with concurrency control
@@ -450,19 +485,24 @@ export default defineEventHandler(async (event) => {
     const executing: Promise<void>[] = [];
 
     for (const task of tasks) {
-      const promise = runBenchmark(task, rootDir, input, (runIndex, agentTotalRuns, timeMs) => {
-        completedRuns++;
-        // Send run progress event
-        sendEvent("run-progress", {
-          agent: task.agent,
-          runIndex,
-          agentTotalRuns,
-          timeMs,
-          currentRun: completedRuns,
-          totalRuns,
-          percent: Math.round((completedRuns / totalRuns) * 100),
-        });
-      }).then((result) => {
+      const promise = runBenchmark(
+        task,
+        rootDir,
+        input,
+        (runIndex, agentTotalRuns, timeMs) => {
+          completedRuns++;
+          // Send run progress event
+          sendEvent("run-progress", {
+            agent: task.agent,
+            runIndex,
+            agentTotalRuns,
+            timeMs,
+            currentRun: completedRuns,
+            totalRuns,
+            percent: Math.round((completedRuns / totalRuns) * 100),
+          });
+        }
+      ).then((result) => {
         completedAgents++;
         results.push(result);
 
@@ -488,7 +528,10 @@ export default defineEventHandler(async (event) => {
         for (let i = executing.length - 1; i >= 0; i--) {
           const p = executing[i];
           // Check if promise is fulfilled
-          const status = await Promise.race([p.then(() => "fulfilled"), Promise.resolve("pending")]);
+          const status = await Promise.race([
+            p.then(() => "fulfilled"),
+            Promise.resolve("pending"),
+          ]);
           if (status === "fulfilled") {
             executing.splice(i, 1);
           }

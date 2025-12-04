@@ -8,7 +8,7 @@ function getDefaultDay(): number {
   const now = new Date();
   const month = now.getMonth(); // 0-indexed, so December = 11
   const day = now.getDate();
-  
+
   // Only auto-select if we're in December
   if (month === 11) {
     return Math.min(day, 12); // Max is 12
@@ -110,7 +110,9 @@ async function publishDay() {
 <template>
   <div class="max-w-7xl mx-auto">
     <!-- Header -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+    <div
+      class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4"
+    >
       <div class="flex flex-col sm:flex-row sm:items-center gap-4">
         <h1 class="text-xl font-black flex items-center gap-2">
           <span class="text-yellow-400">⚙️</span> Admin
@@ -154,7 +156,9 @@ async function publishDay() {
         >
           💾 Save
         </UButton>
-        <NuxtLink to="/" class="text-xs text-white/30 hover:text-white ml-2 hidden md:inline"
+        <NuxtLink
+          to="/"
+          class="text-xs text-white/30 hover:text-white ml-2 hidden md:inline"
           >← Back</NuxtLink
         >
       </div>

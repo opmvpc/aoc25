@@ -6,7 +6,14 @@
  * Usage: npm run scaffold
  */
 
-import { mkdir, writeFile, access, readdir, copyFile, readFile } from "node:fs/promises";
+import {
+  mkdir,
+  writeFile,
+  access,
+  readdir,
+  copyFile,
+  readFile,
+} from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { execSync } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -536,7 +543,7 @@ async function getSolutionJournalTemplate(day: number): Promise<string> {
   const templatePath = join(ROOT, "core", "templates", "solution-journal.md");
   const dayPadded = day.toString().padStart(2, "0");
   const title = day === 0 ? "Number Cruncher (Test Day)" : "[Titre à définir]";
-  
+
   try {
     const template = await readFile(templatePath, "utf-8");
     return template
@@ -609,7 +616,7 @@ async function scaffoldAgents(): Promise<void> {
 
     // notes/ with solution journals
     await writeIfNotExists(join(agentDir, "notes", ".gitkeep"), GITKEEP);
-    
+
     // Create solution journal for each day
     for (let day = 0; day <= DAYS; day++) {
       const dayPadded = day.toString().padStart(2, "0");

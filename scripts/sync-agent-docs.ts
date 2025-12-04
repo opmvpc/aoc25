@@ -92,7 +92,10 @@ async function syncSolutionJournalTemplate(): Promise<void> {
         const content = template
           .replace(/\{\{DAY\}\}/g, day.toString())
           .replace(/\{\{DAY_PADDED\}\}/g, dayPadded)
-          .replace(/\{\{TITLE\}\}/g, day === 0 ? "Number Cruncher (Test Day)" : "[Titre à définir]")
+          .replace(
+            /\{\{TITLE\}\}/g,
+            day === 0 ? "Number Cruncher (Test Day)" : "[Titre à définir]"
+          )
           .replace(/\{\{DATE\}\}/g, "")
           .replace(/\{\{TIME\}\}/g, "");
 

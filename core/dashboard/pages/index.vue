@@ -309,30 +309,32 @@ async function runSingle(
   const key = `${agent}-${dayId}-${part}-${lang}`;
   const realtimeKey = `${dayId}-${agent}-${lang}-${part}`;
   runningItems.value.add(key);
-  
+
   try {
     // Use SSE for real-time update
     const url = `/api/runs/stream?days=${dayId}&sample=false&agents=${agent}&parts=${part}&languages=${lang}`;
     const eventSource = new EventSource(url);
-    
+
     await new Promise<void>((resolve, reject) => {
       eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          
+
           if (data.type === "result") {
             const result = data.data;
             // Update realtime results immediately
-            realtimeResults.value = new Map(realtimeResults.value.set(realtimeKey, {
-              status: result.error
-                ? "error"
-                : result.isCorrect === true
-                ? "success"
-                : result.isCorrect === false
-                ? "error"
-                : "pending",
-              timeMs: result.timeMs,
-            }));
+            realtimeResults.value = new Map(
+              realtimeResults.value.set(realtimeKey, {
+                status: result.error
+                  ? "error"
+                  : result.isCorrect === true
+                  ? "success"
+                  : result.isCorrect === false
+                  ? "error"
+                  : "pending",
+                timeMs: result.timeMs,
+              })
+            );
           } else if (data.type === "done") {
             eventSource.close();
             resolve();
@@ -341,7 +343,7 @@ async function runSingle(
           console.error("Failed to parse SSE data:", e);
         }
       };
-      
+
       eventSource.onerror = () => {
         eventSource.close();
         reject(new Error("SSE connection failed"));
@@ -414,7 +416,9 @@ const medal = (r: number | null) =>
               <div
                 class="h-full bg-yellow-500 transition-all duration-300"
                 :style="{
-                  width: `${(runProgress.completed / runProgress.total) * 100}%`,
+                  width: `${
+                    (runProgress.completed / runProgress.total) * 100
+                  }%`,
                 }"
               />
             </div>

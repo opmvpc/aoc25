@@ -15,6 +15,7 @@ Tu es en compétition contre d'autres IA. Les solutions seront benchmarkées 100
 ### Penser en Code Machine
 
 Quand tu écris du code, pense à ce qui se passe au niveau CPU :
+
 - **Chaque instruction compte** : ADD, MUL, CMP, JMP ont des coûts différents
 - **Les branches sont coûteuses** : Une mauvaise prédiction = ~15-20 cycles perdus
 - **Le cache est roi** : L1 cache hit = ~4 cycles, RAM = ~100+ cycles
@@ -36,15 +37,16 @@ Quand tu écris du code, pense à ce qui se passe au niveau CPU :
 
 ### 📊 1. Réduction de Complexité Algorithmique
 
-| Problème | Naïf | Optimisé | Technique |
-|----------|------|----------|-----------|
-| Recherche dans liste | O(n) | O(1) | HashMap/Set |
-| Tri | O(n²) | O(n log n) | QuickSort/MergeSort |
-| Sous-séquence max | O(n²) | O(n) | Kadane's algorithm |
-| Plus court chemin | O(V²) | O(E log V) | Dijkstra avec heap |
-| Paires avec somme | O(n²) | O(n) | Two pointers ou HashMap |
+| Problème             | Naïf  | Optimisé   | Technique               |
+| -------------------- | ----- | ---------- | ----------------------- |
+| Recherche dans liste | O(n)  | O(1)       | HashMap/Set             |
+| Tri                  | O(n²) | O(n log n) | QuickSort/MergeSort     |
+| Sous-séquence max    | O(n²) | O(n)       | Kadane's algorithm      |
+| Plus court chemin    | O(V²) | O(E log V) | Dijkstra avec heap      |
+| Paires avec somme    | O(n²) | O(n)       | Two pointers ou HashMap |
 
 **Exemple - Compter les paires (a,b) où a+b divisible par K :**
+
 ```
 Naïf O(n²): Pour chaque paire, tester (a+b) % K == 0
 Optimisé O(n): Grouper par reste modulo K, combiner les groupes complémentaires
@@ -53,6 +55,7 @@ Optimisé O(n): Grouper par reste modulo K, combiner les groupes complémentaire
 ### 🧮 2. Optimisations Mathématiques
 
 #### Formules Fermées
+
 Remplacer les boucles par des formules mathématiques :
 
 ```c
@@ -65,6 +68,7 @@ long sum = (long)n * (n + 1) / 2;
 ```
 
 **Formules utiles :**
+
 - Somme 1..n : `n*(n+1)/2`
 - Somme carrés : `n*(n+1)*(2n+1)/6`
 - Somme cubes : `(n*(n+1)/2)²`
@@ -72,6 +76,7 @@ long sum = (long)n * (n + 1) / 2;
 - Progression arithmétique : `n * (a₁ + aₙ) / 2`
 
 #### Propriétés Modulo
+
 ```c
 // (a + b) % m == ((a % m) + (b % m)) % m
 // (a * b) % m == ((a % m) * (b % m)) % m
@@ -83,6 +88,7 @@ int mod(int a, int m) {
 ```
 
 #### Manipulation de Bits
+
 ```c
 // Vérifier si n est puissance de 2
 bool isPow2 = n && !(n & (n - 1));
@@ -109,6 +115,7 @@ a ^= b; b ^= a; a ^= b;
 ### 💾 3. Optimisations Mémoire
 
 #### Localité du Cache
+
 ```c
 // ❌ Mauvais - Accès par colonne (stride = largeur)
 for (int j = 0; j < cols; j++)
@@ -122,6 +129,7 @@ for (int i = 0; i < rows; i++)
 ```
 
 #### Préallocation
+
 ```c
 // ❌ Allocations répétées
 for (int i = 0; i < n; i++) {
@@ -139,6 +147,7 @@ free(buf);
 ```
 
 #### Structure Packing
+
 ```c
 // ❌ 24 bytes (avec padding)
 struct Bad {
@@ -196,13 +205,13 @@ Traiter 4, 8, 16 ou 32 valeurs en une seule instruction !
 __attribute__((target("avx2")))
 int find_max_simd(int* arr, int n) {
     __m256i max_vec = _mm256_set1_epi32(INT_MIN);
-    
+
     int i = 0;
     for (; i + 8 <= n; i += 8) {
         __m256i data = _mm256_loadu_si256((__m256i*)(arr + i));
         max_vec = _mm256_max_epi32(max_vec, data);
     }
-    
+
     // Réduction horizontale
     __m128i low = _mm256_castsi256_si128(max_vec);
     __m128i high = _mm256_extracti128_si256(max_vec, 1);
@@ -210,17 +219,18 @@ int find_max_simd(int* arr, int n) {
     low = _mm_max_epi32(low, _mm_shuffle_epi32(low, _MM_SHUFFLE(2,3,0,1)));
     low = _mm_max_epi32(low, _mm_shuffle_epi32(low, _MM_SHUFFLE(1,0,3,2)));
     int max_val = _mm_extract_epi32(low, 0);
-    
+
     // Traiter le reste
     for (; i < n; i++) {
         if (arr[i] > max_val) max_val = arr[i];
     }
-    
+
     return max_val;
 }
 ```
 
 **Instructions SIMD utiles :**
+
 - `_mm256_max_epu8` : Max de 32 bytes en parallèle
 - `_mm256_cmpeq_epi8` : Comparaison de 32 bytes
 - `_mm256_movemask_epi8` : Extraire les bits de signe
@@ -252,7 +262,7 @@ while (*p >= '0') {  // Fonctionne car '0'-'9' sont les seuls >= '0' avant ':'
 const nums = line.match(/\d+/g)?.map(Number);
 
 // ✅ Rapide - Split manuel
-const parts = line.split(' ');
+const parts = line.split(" ");
 const a = parseInt(parts[0], 10);
 
 // ❌ Lent - Array avec push
@@ -297,6 +307,7 @@ Pour chaque exercice, crée un fichier `notes/solution-dayXX.md` avec :
 # Day XX - [Titre du problème]
 
 ## Analyse du Problème
+
 - Que demande l'énoncé ?
 - Quelles sont les contraintes (taille input, valeurs max) ?
 - Quelle complexité est nécessaire ?
@@ -304,26 +315,31 @@ Pour chaque exercice, crée un fichier `notes/solution-dayXX.md` avec :
 ## Approches Considérées
 
 ### Approche 1 : [Nom]
+
 - **Complexité** : O(?)
 - **Description** : ...
 - **Avantages** : ...
 - **Inconvénients** : ...
 
 ### Approche 2 : [Nom]
+
 ...
 
 ## Solution Choisie
+
 - **Approche** : [Laquelle et pourquoi]
 - **Optimisations appliquées** : ...
 
 ## Résultats
-| Version | Langage | Temps | Notes |
-|---------|---------|-------|-------|
-| v1 naive | TS | 500ms | |
-| v2 optimized | TS | 50ms | HashMap |
-| v3 | C | 5ms | SIMD |
+
+| Version      | Langage | Temps | Notes   |
+| ------------ | ------- | ----- | ------- |
+| v1 naive     | TS      | 500ms |         |
+| v2 optimized | TS      | 50ms  | HashMap |
+| v3           | C       | 5ms   | SIMD    |
 
 ## Leçons Apprises
+
 - ...
 ```
 
@@ -398,11 +414,13 @@ int main(void) {
 ```
 
 **Compilation recommandée :**
+
 ```bash
 clang -O3 -march=native -ffast-math -o part1 part1.c
 ```
 
 **Analyse assembleur pour optimisation :**
+
 ```bash
 # Générer le code assembleur avec annotations source
 clang -O3 -march=native -ffast-math -S -fverbose-asm -o part1.s part1.c
@@ -415,6 +433,7 @@ objdump -d -S -M intel part1 > part1.asm
 ```
 
 Analyser l'assembleur généré permet de :
+
 - Vérifier que le compilateur a bien vectorisé (SIMD) les boucles
 - Détecter les branches inutiles ou mal prédites
 - S'assurer que les optimisations attendues sont appliquées
