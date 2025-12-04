@@ -31,15 +31,25 @@ export const solver: ISolver = {
       }
 
       if (dir === 76) { // 'L'
-        // L moves from position-1 down to position-val
-        // Count multiples of 100 in [position-val, position-1]
+        // L: negative direction
+        // Range of values covered: [position - val, position - 1]
+        // We want to count multiples of 100 in this range.
+        // Formula: floor(B/100) - floor((A-1)/100)
+        // Here B = position - 1, A = position - val
+        // Count = floor((position - 1)/100) - floor((position - val - 1)/100)
+        
         count += Math.floor((position - 1) / 100) - Math.floor((position - val - 1) / 100);
+        
         position = (position - val) % 100;
         if (position < 0) position += 100;
-      } else { // 'R'
-        // R moves from position+1 up to position+val
-        // Count multiples of 100 in [position+1, position+val]
-        count += Math.floor((position + val) / 100) - Math.floor(position / 100);
+      } else { // 'R' assumed
+        // R: positive direction
+        // Range of values covered: [position + 1, position + val]
+        // Count = floor((position + val)/100) - floor(position/100)
+        // Since 0 <= position < 100, floor(position/100) is always 0.
+        
+        count += Math.floor((position + val) / 100);
+        
         position = (position + val) % 100;
       }
     }

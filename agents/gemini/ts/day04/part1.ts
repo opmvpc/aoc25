@@ -1,10 +1,17 @@
+/**
+ * 🎄 Advent of Code 2025 - Day 04 Part 1
+ * @see https://adventofcode.com/2025/day/4
+ */
+
 import type { ISolver } from "../../tools/runner/types.js";
 
 export const solver: ISolver = {
   solve(input: string): string {
-    const grid = input.split('\n').map(row => row.split(''));
+    const grid = input.trim().split(/\r?\n/);
     const rows = grid.length;
+    if (rows === 0) return "0";
     const cols = grid[0].length;
+    
     let accessibleRolls = 0;
 
     // Define the 8 directions for neighbors (including diagonals)
@@ -13,24 +20,25 @@ export const solver: ISolver = {
 
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
-        if (grid[r][c] === '@') {
-          let adjacentPaperRolls = 0;
+        if (grid[r][c] !== '@') continue;
 
-          for (let i = 0; i < 8; i++) {
-            const nr = r + dr[i];
-            const nc = c + dc[i];
+        let adjacentPaperRolls = 0;
 
-            // Check boundaries
-            if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
-              if (grid[nr][nc] === '@') {
-                adjacentPaperRolls++;
-              }
+        for (let i = 0; i < 8; i++) {
+          const nr = r + dr[i];
+          const nc = c + dc[i];
+
+          // Check boundaries
+          if (nr >= 0 && nr < rows && nc >= 0 && nc < cols) {
+            // Check if neighbor is a roll
+            if (grid[nr][nc] === '@') {
+              adjacentPaperRolls++;
             }
           }
+        }
 
-          if (adjacentPaperRolls < 4) {
-            accessibleRolls++;
-          }
+        if (adjacentPaperRolls < 4) {
+          accessibleRolls++;
         }
       }
     }

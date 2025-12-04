@@ -1,6 +1,7 @@
 /**
  * 🎄 Advent of Code 2025 - Day 01 Part 2
  * Count ALL times dial crosses 0 (during and at end of rotations)
+ * Optimized: fast parsing, no modulo
  */
 
 import type { ISolver } from "../../tools/runner/types.js";
@@ -16,12 +17,12 @@ export const solver: ISolver = {
       const c = input.charCodeAt(i);
 
       // Skip non-L/R chars
-      if (c !== 76 && c !== 82) { // 'L' = 76, 'R' = 82
+      if (c !== 76 && c !== 82) {
         i++;
         continue;
       }
 
-      const isLeft = c === 76;
+      const isRight = c === 82;
       i++;
 
       // Fast integer parse
@@ -32,18 +33,17 @@ export const solver: ISolver = {
         i++;
       }
 
-      if (isLeft) {
-        // Left: count full rotations + crossing if remainder >= pos
-        const fullRotations = (dist / 100) | 0;
-        const rem = dist - fullRotations * 100;
-        count += fullRotations;
-        // Cross 0 if we pass through it (rem >= pos, but not if pos is 0)
-        count += +(rem >= pos && pos !== 0);
-        pos = ((pos - rem) % 100 + 100) % 100;
+      if (isRight) {
+        const total = pos + dist;
+        const crossings = (total / 100) | 0;
+        count += crossings;
+        pos = total - crossings * 100;
       } else {
-        // Right: (pos + dist) / 100 gives full crossings
-        count += ((pos + dist) / 100) | 0;
-        pos = (pos + dist) % 100;
+        const fullRot = (dist / 100) | 0;
+        const rem = dist - fullRot * 100;
+        count += fullRot + (+(rem >= pos && pos !== 0));
+        pos = pos - rem;
+        if (pos < 0) pos += 100;
       }
     }
 

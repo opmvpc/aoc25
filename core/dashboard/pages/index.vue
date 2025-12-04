@@ -17,9 +17,15 @@ const agents: Agent[] = ["claude", "codex", "gemini"];
 const languages: Language[] = ["ts", "c"];
 
 const modelNames: Record<Agent, string> = {
-  claude: "Sonnet 4.5",
+  claude: "Opus 4.5",
   codex: "GPT-5.1-codex-max",
   gemini: "Gemini 3 Pro",
+};
+
+const agentShortNames: Record<Agent, string> = {
+  claude: "CLA",
+  codex: "GPT",
+  gemini: "GEM",
 };
 
 // Language filter
@@ -577,7 +583,7 @@ const medal = (r: number | null) =>
                       :class="`agent-${agent}`"
                       class="px-1 py-0.5 rounded text-[9px] font-bold uppercase"
                     >
-                      {{ agent.slice(0, 3) }}
+                      {{ agentShortNames[agent] }}
                     </span>
                   </td>
                   <template v-for="lang in filteredLangs" :key="lang">

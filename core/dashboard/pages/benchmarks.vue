@@ -10,6 +10,12 @@ const agents: Agent[] = ["claude", "codex", "gemini"];
 const languages: Language[] = ["ts", "c"];
 const days = Array.from({ length: 13 }, (_, i) => i);
 
+const agentShortNames: Record<Agent, string> = {
+  claude: "CLA",
+  codex: "GPT",
+  gemini: "GEM",
+};
+
 const form = reactive({
   agent: "all" as Agent | "all",
   day: 1,
@@ -264,7 +270,7 @@ const medal = (idx: number) => (idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉"
                   : 'glass-subtle text-white/40 hover:text-white'
               "
             >
-              {{ agent.slice(0, 3) }}
+              {{ agentShortNames[agent] }}
             </button>
           </div>
         </div>
@@ -407,7 +413,7 @@ const medal = (idx: number) => (idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉"
               :class="`agent-${agent}`"
               class="px-1.5 py-0.5 rounded text-[10px] font-bold capitalize"
             >
-              {{ agent.slice(0, 3) }}
+              {{ agentShortNames[agent] }}
             </span>
             <template v-if="realtimeResults[agent]">
               <span
@@ -580,7 +586,7 @@ const medal = (idx: number) => (idx === 0 ? "🥇" : idx === 1 ? "🥈" : "🥉"
                   :class="`agent-${b.agent}`"
                   class="px-1.5 py-0.5 rounded text-[10px] font-bold capitalize"
                 >
-                  {{ b.agent.slice(0, 3) }}
+                  {{ agentShortNames[b.agent as Agent] }}
                 </span>
               </td>
               <td class="py-1.5 px-2 text-center text-white/60">{{ b.day }}</td>

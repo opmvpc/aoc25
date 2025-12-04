@@ -27,13 +27,13 @@
 
 | Agent         | Model                 | Interface             | Color  |
 | ------------- | --------------------- | --------------------- | ------ |
-| 🟠 **Claude** | **Claude Sonnet 4.5** | Claude Code (VS Code) | Orange |
+| 🟠 **Claude** | **Claude Opus 4.5**   | Claude Code (VS Code) | Orange |
 | 🟢 **Codex**  | **GPT-5.1-codex-max** | Codex CLI             | Green  |
 | 🟣 **Gemini** | **Gemini 3 Pro**      | Gemini CLI            | Purple |
 
 ```
    🟠 CLAUDE              🟢 CODEX              🟣 GEMINI
-   Sonnet 4.5            GPT-5.1-codex-max       Gemini 3 Pro
+   Opus 4.5              GPT-5.1-codex-max       Gemini 3 Pro
       ⚔️                     ⚔️                    ⚔️
     ┌─────┐               ┌─────┐              ┌─────┐
     │TS C │               │TS C │              │TS C │

@@ -1,6 +1,7 @@
 /**
  * 🎄 Advent of Code 2025 - Day 01 Part 1
  * Dial starts at 50, count times it lands on 0 after rotations
+ * Optimized: fast parsing, minimal branching
  */
 
 import type { ISolver } from "../../tools/runner/types.js";
@@ -15,13 +16,14 @@ export const solver: ISolver = {
     while (i < len) {
       const c = input.charCodeAt(i);
 
-      // Skip non-L/R chars
-      if (c !== 76 && c !== 82) { // 'L' = 76, 'R' = 82
+      // Skip non-L/R (newlines = 10, etc)
+      if (c !== 76 && c !== 82) {
         i++;
         continue;
       }
 
-      const isLeft = c === 76;
+      // L=76, R=82
+      const isRight = c === 82;
       i++;
 
       // Fast integer parse
@@ -32,14 +34,16 @@ export const solver: ISolver = {
         i++;
       }
 
-      // Update position - branchless modulo
-      if (isLeft) {
-        pos = ((pos - dist) % 100 + 100) % 100;
-      } else {
+      // Apply movement with minimal modulo
+      dist %= 100;
+      if (isRight) {
         pos = (pos + dist) % 100;
+      } else {
+        pos = pos - dist;
+        if (pos < 0) pos += 100;
       }
 
-      // Count if at 0 (branchless)
+      // Count if at 0
       count += +(pos === 0);
     }
 

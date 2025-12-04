@@ -43,7 +43,7 @@ const route = useRoute();
                   <span class="hidden lg:inline">AoC 2025 Battle Royale</span>
                 </h1>
                 <p class="hidden xl:block text-xs text-white/50 font-mono">
-                  Claude 4.5 vs GPT-5.1-codex vs Gemini 3
+                  Opus 4.5 vs GPT-5.1-codex vs Gemini 3
                 </p>
               </div>
             </NuxtLink>

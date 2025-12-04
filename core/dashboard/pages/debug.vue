@@ -2,7 +2,14 @@
 const agents = ["claude", "codex", "gemini"] as const;
 const days = Array.from({ length: 13 }, (_, i) => i);
 
-const selectedAgent = ref<(typeof agents)[number]>("claude");
+type Agent = (typeof agents)[number];
+const agentShortNames: Record<Agent, string> = {
+  claude: "CLA",
+  codex: "GPT",
+  gemini: "GEM",
+};
+
+const selectedAgent = ref<Agent>("claude");
 const selectedDay = ref(0);
 const selectedPart = ref<1 | 2>(1);
 const selectedLanguage = ref<"ts" | "c">("ts");
@@ -95,7 +102,7 @@ function fmt(ms: number): string {
                   : 'glass-subtle text-white/40 hover:text-white'
               "
             >
-              {{ agent }}
+              {{ agentShortNames[agent] }}
             </button>
           </div>
         </div>
@@ -210,7 +217,7 @@ function fmt(ms: number): string {
               :class="`agent-${result.agent}`"
               class="px-2 py-1 rounded-lg text-xs font-bold capitalize"
             >
-              {{ result.agent }}
+              {{ agentShortNames[result.agent as Agent] }}
             </span>
             <span class="text-white/60 text-sm">
               Day {{ result.day }} · P{{ result.part }} ·
