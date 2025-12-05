@@ -1,46 +1,18 @@
 /**
  * 🎄 Advent of Code 2025 - Day 02 Part 1
- * Compile: clang -O2 -o part1 part1.c
+ * Compile: clang -O3 -march=native -flto -o part1 part1.c
  * Run: ./part1 < input.txt
  */
 
 #include "../../tools/runner/c/common.h"
 
-typedef struct {
-    unsigned long long lo;
-    unsigned long long hi;
-} Range;
-
-static inline int digit_count(unsigned long long x) {
-    int d = 1;
-    while (x >= 10) {
-        x /= 10;
-        d++;
-    }
-    return d;
-}
-
-static void print_u128(unsigned __int128 value) {
-    char buf[40];
-    int idx = 39;
-    buf[idx] = '\0';
-    if (value == 0) {
-        putchar('0');
-        return;
-    }
-    while (value > 0) {
-        unsigned int digit = (unsigned int)(value % 10);
-        buf[--idx] = (char)('0' + digit);
-        value /= 10;
-    }
-    fputs(buf + idx, stdout);
-}
+typedef struct { unsigned long long lo, hi; } Range;
 
 int main(void) {
     char* input = aoc_read_input();
 
     AOC_TIMER_START(parse);
-    Range ranges[256];
+    Range ranges[128];
     int rc = 0;
     unsigned long long maxR = 0;
 
@@ -59,43 +31,59 @@ int main(void) {
             p++;
         }
         ranges[rc].lo = lo;
-        ranges[rc].hi = hi;
-        if (hi > maxR) maxR = hi;
         rc++;
+        if (hi > maxR) maxR = hi;
+        ranges[rc - 1].hi = hi;
         while (*p == ',' || *p == '\n' || *p == '\r') p++;
     }
     AOC_TIMER_END(parse);
 
     AOC_TIMER_START(solve);
-    unsigned long long pow10[20];
+    unsigned long long pow10[11];
     pow10[0] = 1;
-    for (int i = 1; i < 20; i++) pow10[i] = pow10[i - 1] * 10ULL;
+    for (int i = 1; i <= 10; i++) pow10[i] = pow10[i - 1] * 10ULL;
 
-    int mMax = digit_count(maxR) / 2;
+    int digitsMax = 0;
+    unsigned long long t = maxR;
+    do { digitsMax++; t /= 10ULL; } while (t);
+
     unsigned __int128 total = 0;
-
-    for (int idx = 0; idx < rc; idx++) {
-        unsigned long long L = ranges[idx].lo;
-        unsigned long long R = ranges[idx].hi;
-        for (int m = 1; m <= mMax; m++) {
-            unsigned long long k = pow10[m] + 1ULL;
-            unsigned long long xLo = (L + k - 1) / k;
-            unsigned long long xHi = R / k;
-            unsigned long long lower = pow10[m - 1];
-            unsigned long long upper = pow10[m] - 1;
-            if (xLo < lower) xLo = lower;
-            if (xHi > upper) xHi = upper;
+    int mMax = digitsMax >> 1;
+    for (int m = 1; m <= mMax; m++) {
+        unsigned long long k = pow10[m] + 1ULL;
+        unsigned long long baseMin = pow10[m - 1];
+        unsigned long long baseMax = pow10[m] - 1;
+        for (int i = 0; i < rc; i++) {
+            unsigned long long xLo = ranges[i].lo / k;
+            if (ranges[i].lo % k) xLo++;
+            if (xLo < baseMin) xLo = baseMin;
+            unsigned long long xHi = ranges[i].hi / k;
+            if (xHi > baseMax) xHi = baseMax;
             if (xLo > xHi) continue;
-
-            unsigned long long count = xHi - xLo + 1;
-            unsigned __int128 sumX = (unsigned __int128)(xLo + xHi) * (unsigned __int128)count / 2;
+            unsigned long long cnt = xHi - xLo + 1ULL;
+            unsigned __int128 sumX = (unsigned __int128)(xLo + xHi) * cnt;
+            if (cnt & 1ULL) sumX /= 2ULL;
+            else sumX = (sumX >> 1);
             total += (unsigned __int128)k * sumX;
         }
     }
     AOC_TIMER_END(solve);
 
+    // Output
+    char buf[40];
+    int idx = 39;
+    buf[idx] = '\0';
+    unsigned __int128 tmpTotal = total;
+    if (tmpTotal == 0) buf[--idx] = '0';
+    else {
+        while (tmpTotal > 0) {
+            unsigned int digit = (unsigned int)(tmpTotal % 10);
+            buf[--idx] = (char)('0' + digit);
+            tmpTotal /= 10;
+        }
+    }
     fputs("ANSWER:", stdout);
-    print_u128(total);
+    fputs(buf + idx, stdout);
     putchar('\n');
 
     aoc_cleanup(input);

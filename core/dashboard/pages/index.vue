@@ -13,6 +13,9 @@ const { data: implementedMap, refresh: refreshImplemented } = await useFetch<
   Record<string, boolean>
 >("/api/runs/check-implemented");
 
+// Get refreshStars from app.vue
+const refreshStars = inject<() => Promise<void>>("refreshStars");
+
 const agents: Agent[] = ["claude", "codex", "gemini"];
 const languages: Language[] = ["ts", "c"];
 
@@ -253,6 +256,8 @@ async function runDay(dayId: number, sample = false) {
   try {
     await runWithSSE(dayId.toString(), sample);
     // No refresh needed - results are already in realtimeResults
+    // Refresh stars count
+    if (refreshStars) await refreshStars();
   } catch (e) {
     console.error(e);
   } finally {
@@ -284,6 +289,8 @@ async function runAll() {
     await runWithSSE("all", false);
     // No refresh needed - results are already in realtimeResults
     await refreshImplemented();
+    // Refresh stars count
+    if (refreshStars) await refreshStars();
   } catch (e) {
     console.error(e);
   } finally {
@@ -355,6 +362,8 @@ async function runSingle(
         reject(new Error("SSE connection failed"));
       };
     });
+    // Refresh stars count
+    if (refreshStars) await refreshStars();
   } catch (e) {
     console.error(e);
   }

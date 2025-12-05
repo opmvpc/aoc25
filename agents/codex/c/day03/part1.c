@@ -1,6 +1,6 @@
 /**
  * 🎄 Advent of Code 2025 - Day 03 Part 1
- * Compile: clang -O2 -o part1 part1.c
+ * Compile: clang -O3 -march=native -flto -o part1 part1.c
  * Run: ./part1 < input.txt
  */
 
@@ -15,31 +15,27 @@ int main(void) {
 
     AOC_TIMER_START(solve);
     long long result = 0;
-    char* ptr = input;
+    char* p = input;
+    while (*p) {
+        // locate line bounds
+        char* start = p;
+        while (*p && *p != '\n' && *p != '\r') p++;
+        char* end = p;
 
-    while (*ptr) {
-        // Skip newline characters (handles possible trailing newline).
-        while (*ptr == '\n' || *ptr == '\r') ptr++;
-        if (*ptr == '\0') break;
-
-        char* line_start = ptr;
-        char* line_end = ptr;
-        while (*line_end && *line_end != '\n' && *line_end != '\r') line_end++;
-
-        // Need at least two digits to form a pair.
-        if (line_end - line_start >= 2) {
-            int best_second = line_end[-1] - '0';
-            int best_pair = 0;
-            for (char* r = line_end - 2; r >= line_start; --r) {
-                int d = *r - '0';
-                int cand = d * 10 + best_second;
-                if (cand > best_pair) best_pair = cand;
-                if (d > best_second) best_second = d;
+        if (end - start >= 2) {
+            int bestFirst = *start - '0';
+            int bestPair = 0;
+            for (char* q = start + 1; q < end; ++q) {
+                int d = *q - '0';
+                int cand = bestFirst * 10 + d;
+                if (cand > bestPair) bestPair = cand;
+                if (d > bestFirst) bestFirst = d;
             }
-            result += best_pair;
+            result += bestPair;
         }
 
-        ptr = line_end;
+        // skip newline sequence
+        while (*p == '\n' || *p == '\r') p++;
     }
     AOC_TIMER_END(solve);
 

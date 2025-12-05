@@ -1,6 +1,7 @@
 /**
  * 🎄 Advent of Code 2025 - Day 03 Part 1
  * Pick 2 batteries to maximize 2-digit joltage
+ * Optimized: branchless max updates
  */
 
 import type { ISolver } from "../../tools/runner/types.js";
@@ -8,35 +9,32 @@ import type { ISolver } from "../../tools/runner/types.js";
 export const solver: ISolver = {
   solve(input: string): string {
     let total = 0;
-    let start = 0;
+    let i = 0;
     const len = input.length;
 
-    while (start < len) {
-      // Find line end
-      let end = start;
-      while (end < len && input.charCodeAt(end) >= 48) end++;
+    while (i < len) {
+      // Find line boundaries
+      const start = i;
+      while (i < len && input.charCodeAt(i) >= 48) i++;
+      const end = i;
+      i++; // skip newline
 
-      const lineLen = end - start;
-      if (lineLen >= 2) {
-        // Single pass: track max digit seen (to the right) and best joltage
-        // First digit position must be < end-1 (need room for second digit)
-        let maxDigit = input.charCodeAt(end - 1) - 48; // last digit as initial max
-        let best = 0;
+      if (end - start < 2) continue;
 
-        // Scan from second-to-last to first (left to right for max tracking)
-        for (let i = end - 2; i >= start; i--) {
-          const d = input.charCodeAt(i) - 48;
-          // If this digit is first, best joltage = d*10 + maxDigit (to its right)
-          const joltage = d * 10 + maxDigit;
-          if (joltage > best) best = joltage;
-          if (d > maxDigit) maxDigit = d;
-        }
+      // Scan right-to-left tracking max digit to the right
+      let maxRight = input.charCodeAt(end - 1);
+      let best = 0;
 
-        total += best;
+      for (let j = end - 2; j >= start; j--) {
+        const d = input.charCodeAt(j);
+        // joltage = (d - 48) * 10 + (maxRight - 48) = d*10 + maxRight - 528
+        const joltage = d * 10 + maxRight - 528;
+        // Branchless max
+        best = joltage > best ? joltage : best;
+        maxRight = d > maxRight ? d : maxRight;
       }
 
-      // Skip to next line
-      start = end + 1;
+      total += best;
     }
 
     return total.toString();

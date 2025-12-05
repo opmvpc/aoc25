@@ -14,28 +14,24 @@ int main(void) {
     long long total = 0;
 
     while (*ptr) {
-        // Find line start and end
-        char* lineStart = ptr;
+        char* line = ptr;
         while (*ptr >= '0') ptr++;
-        int len = ptr - lineStart;
+        int len = ptr - line;
 
         if (len >= 2) {
-            // Single pass right-to-left
-            // Start with last digit as max (first digit must have a second after it)
-            int maxDigit = lineStart[len - 1] - '0';
+            int maxRight = line[len - 1] - '0';
             int best = 0;
 
             for (int i = len - 2; i >= 0; i--) {
-                int d = lineStart[i] - '0';
-                int joltage = d * 10 + maxDigit;
+                int d = line[i] - '0';
+                int joltage = d * 10 + maxRight;
                 if (joltage > best) best = joltage;
-                if (d > maxDigit) maxDigit = d;
+                if (d > maxRight) maxRight = d;
             }
 
             total += best;
         }
 
-        // Skip newline
         if (*ptr) ptr++;
     }
 

@@ -11,6 +11,16 @@ const navItems = [
 ];
 
 const route = useRoute();
+
+// Fetch star count
+const { data: stars, refresh: refreshStars } = await useFetch<{
+  total: number;
+  max: number;
+  byAgent: Record<string, number>;
+}>("/api/stars");
+
+// Provide refresh function globally
+provide("refreshStars", refreshStars);
 </script>
 
 <template>
@@ -85,10 +95,12 @@ const route = useRoute();
                 class="flex items-center gap-1.5 glass-subtle px-2.5 sm:px-3 py-1.5 rounded-lg"
               >
                 <span class="star-gold text-base sm:text-lg lg:text-xl">★</span>
-                <span class="text-yellow-400 font-bold text-xs sm:text-sm"
-                  >0</span
+                <span class="text-yellow-400 font-bold text-xs sm:text-sm">{{
+                  stars?.total ?? 0
+                }}</span>
+                <span class="text-white/30 text-xs sm:text-sm"
+                  >/{{ stars?.max ?? 72 }}</span
                 >
-                <span class="text-white/30 text-xs sm:text-sm">/72</span>
               </div>
             </div>
           </div>
