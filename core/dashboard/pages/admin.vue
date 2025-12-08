@@ -16,12 +16,26 @@ function getDefaultDay(): number {
   return 1;
 }
 
+// Form data type
+interface FormData {
+  puzzle1_md: string;
+  puzzle2_md: string;
+  sample_input: string;
+  sample_expected_p1: string;
+  sample_expected_p2: string;
+  final_input: string;
+  answer_p1: string;
+  answer_p2: string;
+}
+
+// Cache to keep form data across tab switches
+const formCache = reactive<Map<number, FormData>>(new Map());
+
 const selectedDay = ref<number>(getDefaultDay());
 const saving = ref(false);
-const publishing = ref(false);
 const message = ref<{ type: "success" | "error"; text: string } | null>(null);
 
-const form = reactive({
+const form = reactive<FormData>({
   puzzle1_md: "",
   puzzle2_md: "",
   sample_input: "",
@@ -32,10 +46,20 @@ const form = reactive({
   answer_p2: "",
 });
 
-watch(
-  selectedDay,
-  (newDay) => {
-    const day = days.value?.find((d) => d.id === newDay);
+// Save current form to cache before switching
+function saveToCache(dayId: number) {
+  formCache.set(dayId, { ...form });
+}
+
+// Load form data: from cache first, then from DB
+function loadFormData(dayId: number) {
+  const cached = formCache.get(dayId);
+  if (cached) {
+    // Restore from cache
+    Object.assign(form, cached);
+  } else {
+    // Load from DB
+    const day = days.value?.find((d) => d.id === dayId);
     if (day) {
       form.puzzle1_md = day.puzzle1_md || "";
       form.puzzle2_md = day.puzzle2_md || "";
@@ -46,14 +70,28 @@ watch(
       form.answer_p1 = day.answer_p1 || "";
       form.answer_p2 = day.answer_p2 || "";
     }
+  }
+}
+
+// Watch for day changes - save current, load new
+watch(
+  selectedDay,
+  (newDay, oldDay) => {
+    // Save current form to cache before switching
+    if (oldDay !== undefined) {
+      saveToCache(oldDay);
+    }
+    // Load form data for new day
+    loadFormData(newDay);
   },
   { immediate: true }
 );
 
-async function saveDay() {
+async function saveAndPublish() {
   saving.value = true;
   message.value = null;
   try {
+    // Save day data
     await $fetch(`/api/days/${selectedDay.value}`, {
       method: "POST",
       body: {
@@ -77,32 +115,19 @@ async function saveDay() {
         body: { part: 2, answer: form.answer_p2 },
       });
     }
+    // Publish day
+    await $fetch(`/api/publish/${selectedDay.value}`, { method: "POST" });
+    // Update cache with saved data
+    saveToCache(selectedDay.value);
     await refresh();
     message.value = {
       type: "success",
-      text: `Day ${selectedDay.value} saved!`,
+      text: `Day ${selectedDay.value} saved & published!`,
     };
   } catch (err) {
     message.value = { type: "error", text: `Failed: ${err}` };
   } finally {
     saving.value = false;
-  }
-}
-
-async function publishDay() {
-  publishing.value = true;
-  message.value = null;
-  try {
-    await $fetch(`/api/publish/${selectedDay.value}`, { method: "POST" });
-    await refresh();
-    message.value = {
-      type: "success",
-      text: `Day ${selectedDay.value} published!`,
-    };
-  } catch (err) {
-    message.value = { type: "error", text: `Failed: ${err}` };
-  } finally {
-    publishing.value = false;
   }
 }
 </script>
@@ -139,22 +164,12 @@ async function publishDay() {
       <div class="flex items-center gap-2">
         <UButton
           size="xs"
-          color="neutral"
-          variant="ghost"
-          :loading="publishing"
-          :disabled="publishing || saving"
-          @click="publishDay"
-        >
-          📤 Publish
-        </UButton>
-        <UButton
-          size="xs"
           color="primary"
           :loading="saving"
-          :disabled="publishing || saving"
-          @click="saveDay"
+          :disabled="saving"
+          @click="saveAndPublish"
         >
-          💾 Save
+          💾 Save & Publish
         </UButton>
         <NuxtLink
           to="/"

@@ -1,82 +1,133 @@
-/**
- * 🎄 Advent of Code 2025 - Day 02 Part 1
- * Sum of "repeated twice" numbers in ranges
- */
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/syscall.h>
+#include <time.h>
 
-#include "../../tools/runner/c/common.h"
+static struct timespec ts_start;
+static inline void timer_start() { clock_gettime(CLOCK_MONOTONIC, &ts_start); }
+static inline void timer_end(const char* name) {
+    struct timespec ts_end;
+    clock_gettime(CLOCK_MONOTONIC, &ts_end);
+    double ms = (ts_end.tv_sec - ts_start.tv_sec) * 1000.0 + (ts_end.tv_nsec - ts_start.tv_nsec) / 1000000.0;
+    printf("TIME:%s:%.6f\n", name, ms);
+}
 
-// 128-bit integer support for large sums
-typedef unsigned __int128 u128;
+static inline ssize_t sys_read(int fd, void *buf, size_t count) {
+    ssize_t ret;
+    asm volatile ("syscall" : "=a" (ret) : "0" (SYS_read), "D" (fd), "S" (buf), "d" (count) : "rcx", "r11", "memory");
+    return ret;
+}
 
-int main(void) {
-    char* input = aoc_read_input();
-    if (!input) return 1;
+typedef struct { uint64_t min; uint64_t max; } Range;
 
-    AOC_TIMER_START(solve);
-    
-    u128 total = 0;
-    char* p = input;
-    
-    while (*p) {
-        // Skip non-digits (newlines, etc)
-        while (*p && !(*p >= '0' && *p <= '9')) p++;
-        if (!*p) break;
-        
-        // Parse A
-        u128 A = 0;
-        while (*p >= '0' && *p <= '9') {
-            A = A * 10 + (*p - '0');
-            p++;
+static char buf[65536];
+static Range ranges[1024];
+
+static inline void sort_ranges(Range* arr, int n) {
+    for (int i = 1; i < n; i++) {
+        Range key = arr[i];
+        int j = i - 1;
+        while (j >= 0 && arr[j].min > key.min) {
+            arr[j + 1] = arr[j];
+            j--;
         }
-        
-        // Expect '-'
-        if (*p == '-') p++;
-        
-        // Parse B
-        u128 B = 0;
-        while (*p >= '0' && *p <= '9') {
-            B = B * 10 + (*p - '0');
-            p++;
+        arr[j + 1] = key;
+    }
+}
+
+int main() {
+    ssize_t ret = sys_read(0, buf, sizeof(buf));
+    if (ret <= 0) return 0;
+    
+    timer_start();
+    
+    int rc = 0;
+    char* p = buf;
+    char* end = buf + ret;
+    
+    while (p < end) {
+        while (p < end && (*p < '0' || *p > '9')) p++;
+        if (p >= end) break;
+        uint64_t v1 = 0;
+        while (p < end && *p >= '0' && *p <= '9') v1 = v1*10 + (*p++ - '0');
+        if (p < end && *p == '-') p++;
+        uint64_t v2 = 0;
+        while (p < end && *p >= '0' && *p <= '9') v2 = v2*10 + (*p++ - '0');
+        ranges[rc++] = (Range){v1, v2};
+    }
+    
+    sort_ranges(ranges, rc);
+    
+    int mrc = 0;
+    if (rc > 0) {
+        int w = 0;
+        for (int i=1; i<rc; i++) {
+            if (ranges[i].min <= ranges[w].max + 1) {
+                if (ranges[i].max > ranges[w].max) ranges[w].max = ranges[i].max;
+            } else {
+                w++;
+                ranges[w] = ranges[i];
+            }
         }
+        mrc = w + 1;
+    }
+    
+    uint64_t max_val = ranges[mrc-1].max;
+    int max_digits = 0;
+    uint64_t tmp = max_val;
+    while(tmp) { tmp /= 10; max_digits++; }
+    if (max_digits == 0) max_digits = 1;
+    
+    unsigned __int128 total = 0;
+    
+    for (int total_len = 2; total_len <= max_digits; total_len += 2) { // Part 1: n=2 implies total_len is even
+        int n = 2;
+        int L = total_len / 2;
         
-        // Process range [A, B]
-        // Find all invalid IDs (X repeated twice)
-        // N = X * (10^L + 1). Length of N is 2L.
-        // We iterate L. Max range ~10^18 implies L <= 9.
-        // But let's go safely up to L=10.
+        uint64_t M = 0;
+        uint64_t p10L = 1;
+        for(int k=0; k<L; k++) p10L *= 10;
         
-        for (int L = 1; L <= 10; L++) {
-            u128 powerOf10 = 1;
-            for (int k = 0; k < L; k++) powerOf10 *= 10;
+        // M for n=2 is 1 + 10^L
+        M = 1 + p10L;
+        
+        uint64_t min_P = 1;
+        for(int k=0; k<L-1; k++) min_P *= 10;
+        uint64_t max_P = min_P * 10 - 1;
+        
+        uint64_t start_ID = min_P * M;
+        uint64_t end_ID = max_P * M;
+        
+        for (int i=0; i<mrc; i++) {
+            uint64_t r_min = ranges[i].min;
+            uint64_t r_max = ranges[i].max;
             
-            u128 multiplier = powerOf10 + 1;
-            u128 minX = powerOf10 / 10;
-            if (minX == 0) minX = 1; // Should not happen for L>=1 as powerOf10>=10
-            if (L == 1) minX = 1; // Explicitly 1..9
+            uint64_t overlap_min = (start_ID > r_min) ? start_ID : r_min;
+            uint64_t overlap_max = (end_ID < r_max) ? end_ID : r_max;
             
-            u128 maxX = powerOf10 - 1;
-            
-            // We need k * multiplier in [A, B]
-            // k * M >= A  =>  k >= (A + M - 1) / M
-            // k * M <= B  =>  k <= B / M
-            
-            u128 k_min_needed = (A + multiplier - 1) / multiplier;
-            u128 k_max_needed = B / multiplier;
-            
-            u128 k_start = (k_min_needed > minX) ? k_min_needed : minX;
-            u128 k_end = (k_max_needed < maxX) ? k_max_needed : maxX;
-            
-            if (k_start <= k_end) {
-                u128 count = k_end - k_start + 1;
-                u128 sumK = (k_start + k_end) * count / 2;
-                total += sumK * multiplier;
+            if (overlap_min <= overlap_max) {
+                // First multiple of M >= overlap_min
+                uint64_t rem = overlap_min % M;
+                uint64_t first = (rem == 0) ? overlap_min : (overlap_min + M - rem);
+                
+                if (first <= overlap_max) {
+                    // Last multiple of M <= overlap_max
+                    uint64_t last = overlap_max - (overlap_max % M);
+                    
+                    // Count terms
+                    uint64_t count = (last - first) / M + 1;
+                    
+                    // Sum AP: count * (first + last) / 2
+                    total += (unsigned __int128)count * (first + last) / 2;
+                }
             }
         }
     }
-
-    AOC_TIMER_END(solve);
-
-    AOC_RESULT_INT((long long)total);
-    aoc_cleanup(input);
+    
+    timer_end("solve");
+    printf("ANSWER:%lu\n", (uint64_t)total);
     return 0;
 }

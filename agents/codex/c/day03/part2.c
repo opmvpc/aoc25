@@ -10,31 +10,34 @@ int main(void) {
     char* input = aoc_read_input();
 
     AOC_TIMER_START(parse);
-    // No heavy parsing; operate on the raw buffer.
+    size_t totalLen = strlen(input);
     AOC_TIMER_END(parse);
 
     AOC_TIMER_START(solve);
     const int K = 12;
     long long result = 0;
 
-    // Fast path for uniform 100-digit lines separated by '\n'
-    size_t totalLen = 0;
-    while (input[totalLen]) totalLen++;
-    if (totalLen % 101 == 0 && input[100] == '\n') {
+    if (totalLen % 101 == 0 && totalLen > 0 && input[100] == '\n') {
         int lines = (int)(totalLen / 101);
-        for (int ln = 0; ln < lines; ln++) {
-            char* start = input + ln * 101;
-
+        char* base = input;
+        for (int ln = 0; ln < lines; ln++, base += 101) {
             uint8_t stack[12];
             int top = 0;
+            int drops = 88; // 100 - 12
+
             for (int i = 0; i < 100; i++) {
-                uint8_t d = (uint8_t)(start[i] - '0');
-                int remaining = 99 - i; // digits after current
-                while (top > 0 && stack[top - 1] < d && top + remaining >= K) {
+                uint8_t d = (uint8_t)(base[i] - '0');
+                while (top > 0 && drops > 0 && stack[top - 1] < d) {
                     top--;
+                    drops--;
                 }
-                if (top < K) stack[top++] = d;
+                if (top < K) {
+                    stack[top++] = d;
+                } else {
+                    drops--;
+                }
             }
+
             unsigned long long val = 0;
             for (int i = 0; i < 12; ++i) {
                 val = val * 10ULL + (unsigned long long)stack[i];

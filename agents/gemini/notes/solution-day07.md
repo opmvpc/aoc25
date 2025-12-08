@@ -1,142 +1,52 @@
-# Day 7 - [Titre à définir]
+# Day 07 - Laboratories
 
-> 📅 Date de résolution : 
-> ⏱️ Temps total de développement : 
+## Part 1
 
-## 📋 Analyse du Problème
+### Problem
+Simulate a single beam starting at 'S' moving downwards. Splitters (`^`) replicate the beam to left and right. Merging beams combine. Count total splits.
 
-### Énoncé
-<!-- Résumé en 2-3 phrases de ce que demande le problème -->
+### Approach
+- **Grid Scan**: Find S.
+- **Simulation**: Row by row. Maintain a set/array of active X coordinates.
+- **Logic**:
+  - `^`: `split_count++`. Active X becomes `x-1` and `x+1`.
+  - `.`: Active X remains `x`.
+- **Optimization**: Use a `uint8_t` array for active positions (dense boolean array) instead of a Set.
 
-### Contraintes
-- **Taille de l'input** : 
-- **Valeurs maximales** : 
-- **Complexité requise** : 
+### Performance
+- TS: ~1ms
+- C: ~36µs
 
-### Observations Initiales
-<!-- Que remarque-t-on en lisant l'énoncé ? Patterns, propriétés, etc. -->
+## Part 2
 
----
+### Problem
+"Quantum" interpretation: Count total timelines. A timeline splits at each splitter. We need to sum the number of distinct paths taken by particles. If paths merge spatially, their timeline counts sum up.
 
-## 🔬 Approches Considérées
+### Approach
+- **Dynamic Programming**: Row by row.
+- **State**: `counts[x]` = number of active timelines at column `x`.
+- **Logic**:
+  - Start: `counts[start_x] = 1`.
+  - `^` at `x`:
+    - `next_counts[x-1] += counts[x]`
+    - `next_counts[x+1] += counts[x]`
+    - (If out of bounds, add to `total_exited`)
+  - `.` at `x`:
+    - `next_counts[x] += counts[x]`
+- **Result**: Sum of `total_exited` + sum of `counts` at the bottom.
 
-### Approche 1 : Brute Force
-- **Complexité** : O(?)
-- **Description** : 
-- **Avantages** : Simple à implémenter
-- **Inconvénients** : Trop lent pour l'input réel
-- **Verdict** : ❌ Rejeté
+### Optimization
+- **Data Structure**: `unsigned long long` arrays for counts (can exceed 2^32).
+- **Scanning**: Track `max_x` to limit iteration range (though standard grids are usually rectangular, this handles ragged/sparse efficiently).
+- **Memory**: Stack allocation (4096 longs = 32KB).
 
-### Approche 2 : [Nom de l'approche]
-- **Complexité** : O(?)
-- **Description** : 
-- **Insight mathématique** : 
-- **Avantages** : 
-- **Inconvénients** : 
-- **Verdict** : ✅ Sélectionné
+### Results
 
-### Approche 3 : [Alternative]
-- **Complexité** : O(?)
-- **Description** : 
-- **Verdict** : 🔄 Gardé en réserve
+| Part | Version | Language | Time | Answer |
+|---|---|---|---|---|
+| 1 | v1 | TS | 1.10ms | 1600 |
+| 1 | v1 | C | 36µs | 1600 |
+| 2 | v1 | TS | 874µs | 8632253783011 |
+| 2 | v1 | C | 57µs | 8632253783011 |
 
----
-
-## 💡 Solution Choisie
-
-### Algorithme
-<!-- Description détaillée de l'algorithme choisi -->
-
-```
-Pseudo-code ou description étape par étape
-```
-
-### Optimisations Appliquées
-
-#### 1. [Nom de l'optimisation]
-<!-- Pourquoi et comment -->
-
-#### 2. [Autre optimisation]
-<!-- Pourquoi et comment -->
-
-### Considérations Mathématiques
-<!-- Formules utilisées, propriétés exploitées -->
-
----
-
-## 📊 Implémentation
-
-### TypeScript
-
-```typescript
-// Points clés de l'implémentation
-```
-
-**Choix techniques :**
-- Utilisation de Map vs Object : 
-- Typed Arrays : 
-- Autres : 
-
-### C
-
-```c
-// Points clés de l'implémentation
-```
-
-**Choix techniques :**
-- SIMD utilisé : Oui/Non
-- Branchless : Oui/Non
-- Parsing manuel : Oui/Non
-- Autres : 
-
----
-
-## 📈 Benchmarks
-
-### Résultats
-
-| Version | Langage | Temps Moyen | Min | Max | Notes |
-|---------|---------|-------------|-----|-----|-------|
-| v1 | TS | | | | Implémentation initiale |
-| v2 | TS | | | | Après optimisation X |
-| v1 | C | | | | Port initial |
-| v2 | C | | | | Avec SIMD |
-
-### Comparaison avec les autres agents
-
-| Agent | TS | C | Rang |
-|-------|-----|---|------|
-| Claude | | | |
-| Codex | | | |
-| Gemini | | | |
-
----
-
-## 🎓 Leçons Apprises
-
-### Ce qui a bien fonctionné
-- 
-
-### Ce qui aurait pu être mieux
-- 
-
-### Techniques à retenir
-- 
-
-### Erreurs évitées pour la prochaine fois
-- 
-
----
-
-## 📚 Ressources Utilisées
-
-- 
-
----
-
-## 🔗 Fichiers
-
-- Solution Part 1 TS : `ts/day07/part1.ts`
-- Solution Part 2 TS : `ts/day07/part2.ts`
-- Solution Part 1 C : `c/day07/part1.c`
-- Solution Part 2 C : `c/day07/part2.c`
+The C version handles the "quantum split" efficiently using simple array additions, essentially a Pascal's triangle-like propagation on the grid.

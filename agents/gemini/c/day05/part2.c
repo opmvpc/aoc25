@@ -1,118 +1,105 @@
-/**
- * 🎄 Advent of Code 2025 - Day 05 Part 2
- * PERFORMANCE EDITION - v3
- * Compile: clang -O3 -march=native -funroll-loops -o part2 part2.c
- */
-
 #include "../../tools/runner/c/common.h"
-
-#define MAX_RANGES 4096
+#include <stdlib.h>
+#include <ctype.h>
 
 typedef struct {
-    long min;
-    long max;
+    long long start;
+    long long end;
 } Range;
 
-// Custom QuickSort
-static void quicksort_ranges(Range* arr, int low, int high) {
-    if (low < high) {
-        long pivot = arr[high].min;
-        int i = (low - 1);
-        
-        for (int j = low; j <= high - 1; j++) {
-            if (arr[j].min < pivot) {
-                i++;
-                Range temp = arr[i];
-                arr[i] = arr[j];
-                arr[j] = temp;
-            }
-        }
-        Range temp = arr[i + 1];
-        arr[i + 1] = arr[high];
-        arr[high] = temp;
-        
-        int pi = i + 1;
-
-        quicksort_ranges(arr, low, pi - 1);
-        quicksort_ranges(arr, pi + 1, high);
-    }
+int compare_ranges(const void* a, const void* b) {
+    const Range* ra = (const Range*)a;
+    const Range* rb = (const Range*)b;
+    if (ra->start < rb->start) return -1;
+    if (ra->start > rb->start) return 1;
+    return 0;
 }
 
 int main(void) {
     char* input = aoc_read_input();
     
-    AOC_TIMER_START(parse);
+    AOC_TIMER_START(solve);
 
-    Range ranges[MAX_RANGES];
+    // Estimate number of ranges (max lines)
+    // We can just allocate a safe upper bound or count newlines
+    int max_ranges = 2000;
+    Range* ranges = (Range*)malloc(sizeof(Range) * max_ranges);
     int count = 0;
 
-    char* p = input;
+    char* ptr = input;
     
-    // Robust fast parsing
-    while (*p) {
-        // Skip whitespace/newlines to find start of number
-        while (*p && (*p < '0' || *p > '9')) {
-            if (*p == '\n') {
-                char* check = p + 1;
-                if (*check == '\r') check++;
-                if (*check == '\n') goto parsing_done;
-            }
-            p++;
-        }
-        
-        if (!*p) break;
+    while (*ptr) {
+        // Skip whitespace/newlines
+        while (*ptr && isspace(*ptr)) ptr++;
+        if (!*ptr) break;
 
-        // Parse min
-        long val = 0;
-        while (*p >= '0' && *p <= '9') {
-            val = (val * 10) + (*p++ - '0');
+        // Parse Start
+        if (!isdigit(*ptr)) {
+            // Might be the blank line break or EOF?
+            // Actually ranges are "Num-Num".
+            // If we hit something else, maybe we are done with ranges?
+            // The format says ranges, then blank line, then IDs.
+            // IDs are just "Num". Ranges are "Num-Num".
+            // Check for '-'
+            break; 
         }
-        ranges[count].min = val;
 
-        // Skip to next number (max)
-        while (*p && (*p < '0' || *p > '9')) p++;
-        
-        // Parse max
-        val = 0;
-        while (*p >= '0' && *p <= '9') {
-            val = (val * 10) + (*p++ - '0');
+        long long start = 0;
+        while (isdigit(*ptr)) {
+            start = start * 10 + (*ptr++ - '0');
         }
-        ranges[count].max = val;
-        
+
+        if (*ptr != '-') {
+            // If no separator, it's not a range line.
+            // It might be the start of the ID section (just a number)
+            // So we are done with ranges.
+            break; 
+        }
+        ptr++; // Skip '-'
+
+        long long end = 0;
+        while (isdigit(*ptr)) {
+            end = end * 10 + (*ptr++ - '0');
+        }
+
+        ranges[count].start = start;
+        ranges[count].end = end;
         count++;
     }
 
-parsing_done:
-    AOC_TIMER_END(parse);
+    // Sort ranges
+    qsort(ranges, count, sizeof(Range), compare_ranges);
 
-    AOC_TIMER_START(solve);
-    // Sort
-    quicksort_ranges(ranges, 0, count - 1);
-
-    // Merge & Sum
-    long long total_len = 0;
-    
+    // Merge and Sum
+    long long total_fresh = 0;
     if (count > 0) {
-        long current_min = ranges[0].min;
-        long current_max = ranges[0].max;
+        long long current_start = ranges[0].start;
+        long long current_end = ranges[0].end;
 
         for (int i = 1; i < count; i++) {
-            if (ranges[i].min <= current_max + 1) {
-                if (ranges[i].max > current_max) {
-                    current_max = ranges[i].max;
+            // Check for overlap or adjacency
+            // Overlap: next.start <= current.end + 1
+            if (ranges[i].start <= current_end + 1) {
+                // Merge
+                if (ranges[i].end > current_end) {
+                    current_end = ranges[i].end;
                 }
             } else {
-                total_len += (current_max - current_min + 1);
-                current_min = ranges[i].min;
-                current_max = ranges[i].max;
+                // Gap found, push current range
+                total_fresh += (current_end - current_start + 1);
+                // Start new range
+                current_start = ranges[i].start;
+                current_end = ranges[i].end;
             }
         }
-        total_len += (current_max - current_min + 1);
+        // Add last range
+        total_fresh += (current_end - current_start + 1);
     }
 
     AOC_TIMER_END(solve);
-    AOC_RESULT_INT(total_len);
-    
+    AOC_RESULT_INT(total_fresh);
+
+    free(ranges);
     aoc_cleanup(input);
     return 0;
 }
