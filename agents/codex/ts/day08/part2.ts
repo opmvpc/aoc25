@@ -46,16 +46,16 @@ export const solver: ISolver = {
       pos++;
 
       v = 0;
-      while (pos < len && data.charCodeAt(pos) !== 10) {
-        v = v * 10 + (data.charCodeAt(pos) - 48);
-        pos++;
-      }
-      zs[idx] = v;
-      pos++; // newline
-      idx++;
+    while (pos < len && data.charCodeAt(pos) !== 10) {
+      v = v * 10 + (data.charCodeAt(pos) - 48);
+      pos++;
     }
-    n = idx;
-    if (n < 2) return "0";
+    zs[idx] = v;
+    pos++; // newline
+    idx++;
+  }
+  n = idx;
+  if (n < 2) return "0";
 
     const m = (n * (n - 1)) >> 1;
     const dist = new Float64Array(m);
@@ -78,9 +78,84 @@ export const solver: ISolver = {
       }
     }
 
-    const order: number[] = new Array(m);
-    for (let i = 0; i < m; i++) order[i] = i;
-    if (m > 1) order.sort((i, j) => dist[i] - dist[j]);
+    const swap = (i: number, j: number): void => {
+      const td = dist[i];
+      dist[i] = dist[j];
+      dist[j] = td;
+      const ta = ea[i];
+      ea[i] = ea[j];
+      ea[j] = ta;
+      const tb = eb[i];
+      eb[i] = eb[j];
+      eb[j] = tb;
+    };
+
+    const insertionSort = (l: number, r: number): void => {
+      for (let i = l + 1; i <= r; i++) {
+        let j = i - 1;
+        const td = dist[i];
+        const ta = ea[i];
+        const tb = eb[i];
+        while (j >= l && dist[j] > td) {
+          const nj = j + 1;
+          dist[nj] = dist[j];
+          ea[nj] = ea[j];
+          eb[nj] = eb[j];
+          j--;
+        }
+        const nj = j + 1;
+        dist[nj] = td;
+        ea[nj] = ta;
+        eb[nj] = tb;
+      }
+    };
+
+    if (m > 1) {
+      const stackL = new Int32Array(64);
+      const stackR = new Int32Array(64);
+      let sp = 0;
+      stackL[sp] = 0;
+      stackR[sp] = m - 1;
+      sp++;
+
+      while (sp > 0) {
+        sp--;
+        let l = stackL[sp];
+        let r = stackR[sp];
+        while (r - l > 16) {
+          const mid = (l + r) >> 1;
+          const pivot = dist[mid];
+          let i = l;
+          let j = r;
+          while (i <= j) {
+            while (dist[i] < pivot) i++;
+            while (dist[j] > pivot) j--;
+            if (i <= j) {
+              swap(i, j);
+              i++;
+              j--;
+            }
+          }
+          // Tail recursion elimination: process larger partition later
+          if (j - l < r - i) {
+            if (i < r) {
+              stackL[sp] = i;
+              stackR[sp] = r;
+              sp++;
+            }
+            r = j;
+          } else {
+            if (l < j) {
+              stackL[sp] = l;
+              stackR[sp] = j;
+              sp++;
+            }
+            l = i;
+          }
+        }
+        if (l < r) insertionSort(l, r);
+      }
+    }
 
     const parent = new Int32Array(n);
     const size = new Int32Array(n);
@@ -102,9 +177,8 @@ export const solver: ISolver = {
     let lastB = 0;
 
     for (let k = 0; k < m && components > 1; k++) {
-      const edgeIdx = order[k];
-      let ra = find(ea[edgeIdx]);
-      let rb = find(eb[edgeIdx]);
+      let ra = find(ea[k]);
+      let rb = find(eb[k]);
       if (ra === rb) continue;
       if (size[ra] < size[rb]) {
         const tmp = ra;
@@ -114,8 +188,8 @@ export const solver: ISolver = {
       parent[rb] = ra;
       size[ra] += size[rb];
       components--;
-      lastA = ea[edgeIdx];
-      lastB = eb[edgeIdx];
+      lastA = ea[k];
+      lastB = eb[k];
     }
 
     const result = xs[lastA] * xs[lastB];
