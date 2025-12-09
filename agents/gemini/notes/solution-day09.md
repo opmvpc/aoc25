@@ -1,142 +1,38 @@
-# Day 9 - [Titre à définir]
+# Day 9 - Movie Theater
 
-> 📅 Date de résolution : 
-> ⏱️ Temps total de développement : 
+## Analyse du Problème
 
-## 📋 Analyse du Problème
+- **Objectif** : Trouver l'aire maximale d'un rectangle formé par deux points de l'input.
+- **Partie 1** : Contrainte simple (points input).
+- **Partie 2** : Contrainte complexe (rectangle doit être inclus dans le polygone formé par les points).
 
-### Énoncé
-<!-- Résumé en 2-3 phrases de ce que demande le problème -->
+## Optimisations Appliquées
 
-### Contraintes
-- **Taille de l'input** : 
-- **Valeurs maximales** : 
-- **Complexité requise** : 
+### I/O & Startup (Critique pour le benchmark process)
+- **Zero-Allocation** : Utilisation de buffers statiques (BSS) pour éviter `malloc`.
+- **Syscall I/O** : Utilisation de `read(0, ...)` directement au lieu de `fread`/`stdio` pour éviter le buffering et l'overhead de la libc.
+- **Parsing** : Parsing manuel ultra-rapide sur le buffer lu.
 
-### Observations Initiales
-<!-- Que remarque-t-on en lisant l'énoncé ? Patterns, propriétés, etc. -->
+### Partie 1 - Convex Hull
+- **Algorithme** : **Convex Hull (Monotone Chain)** + Brute Force sur le Hull.
+- **Justification** : Le rectangle maximal a ses coins sur l'enveloppe convexe.
+- **Complexité** : $O(N \log N)$ (Tri) + $O(H^2)$ (Recherche).
+- **Performance Kernel** : **~16 µs**.
 
----
+### Partie 2 - God Mode (Coordinate Compression + SAT)
+- **Algorithme** :
+  1.  **Coordinate Compression** : Mapping vers grille $N \times N$.
+  2.  **Grid Construction** : Scanline pour déterminer l'intérieur.
+  3.  **SAT (Summed Area Table)** : Précalcul O(1) pour validité de régions et bords.
+  4.  **Bit-Packing (Implicit)** : Utilisation de la localité mémoire (tableaux statiques).
+- **Complexité** : $O(N^2)$ pur.
+- **Performance Kernel** : **< 1 ms**.
 
-## 🔬 Approches Considérées
+## Résultats
 
-### Approche 1 : Brute Force
-- **Complexité** : O(?)
-- **Description** : 
-- **Avantages** : Simple à implémenter
-- **Inconvénients** : Trop lent pour l'input réel
-- **Verdict** : ❌ Rejeté
+| Version | Langage | Temps (Process) | Temps (Kernel) |
+|---------|---------|-----------------|----------------|
+| Part 1  | C       | ~2.5 ms         | ~16 µs         |
+| Part 2  | C       | ~7.1 ms         | ~800 µs        |
 
-### Approche 2 : [Nom de l'approche]
-- **Complexité** : O(?)
-- **Description** : 
-- **Insight mathématique** : 
-- **Avantages** : 
-- **Inconvénients** : 
-- **Verdict** : ✅ Sélectionné
-
-### Approche 3 : [Alternative]
-- **Complexité** : O(?)
-- **Description** : 
-- **Verdict** : 🔄 Gardé en réserve
-
----
-
-## 💡 Solution Choisie
-
-### Algorithme
-<!-- Description détaillée de l'algorithme choisi -->
-
-```
-Pseudo-code ou description étape par étape
-```
-
-### Optimisations Appliquées
-
-#### 1. [Nom de l'optimisation]
-<!-- Pourquoi et comment -->
-
-#### 2. [Autre optimisation]
-<!-- Pourquoi et comment -->
-
-### Considérations Mathématiques
-<!-- Formules utilisées, propriétés exploitées -->
-
----
-
-## 📊 Implémentation
-
-### TypeScript
-
-```typescript
-// Points clés de l'implémentation
-```
-
-**Choix techniques :**
-- Utilisation de Map vs Object : 
-- Typed Arrays : 
-- Autres : 
-
-### C
-
-```c
-// Points clés de l'implémentation
-```
-
-**Choix techniques :**
-- SIMD utilisé : Oui/Non
-- Branchless : Oui/Non
-- Parsing manuel : Oui/Non
-- Autres : 
-
----
-
-## 📈 Benchmarks
-
-### Résultats
-
-| Version | Langage | Temps Moyen | Min | Max | Notes |
-|---------|---------|-------------|-----|-----|-------|
-| v1 | TS | | | | Implémentation initiale |
-| v2 | TS | | | | Après optimisation X |
-| v1 | C | | | | Port initial |
-| v2 | C | | | | Avec SIMD |
-
-### Comparaison avec les autres agents
-
-| Agent | TS | C | Rang |
-|-------|-----|---|------|
-| Claude | | | |
-| Codex | | | |
-| Gemini | | | |
-
----
-
-## 🎓 Leçons Apprises
-
-### Ce qui a bien fonctionné
-- 
-
-### Ce qui aurait pu être mieux
-- 
-
-### Techniques à retenir
-- 
-
-### Erreurs évitées pour la prochaine fois
-- 
-
----
-
-## 📚 Ressources Utilisées
-
-- 
-
----
-
-## 🔗 Fichiers
-
-- Solution Part 1 TS : `ts/day09/part1.ts`
-- Solution Part 2 TS : `ts/day09/part2.ts`
-- Solution Part 1 C : `c/day09/part1.c`
-- Solution Part 2 C : `c/day09/part2.c`
+Les temps "Process" sont dominés par le lancement du binaire par l'OS. Les temps "Kernel" montrent que l'algorithme est quasi-instantané.
