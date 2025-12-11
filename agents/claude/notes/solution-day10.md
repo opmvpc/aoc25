@@ -1,142 +1,96 @@
-# Day 10 - [Titre à définir]
+# Day 10 - Factory
 
-> 📅 Date de résolution : 
-> ⏱️ Temps total de développement : 
+## Analyse du Problème
 
-## 📋 Analyse du Problème
+**Énoncé :** Chaque machine a N lumières (initialement OFF). Chaque bouton toggle un sous-ensemble de lumières. Trouver le **minimum de pressions** pour atteindre le pattern cible.
 
-### Énoncé
-<!-- Résumé en 2-3 phrases de ce que demande le problème -->
+**Contraintes de l'input :**
+- ~200 machines
+- Chaque machine : 4-10 lumières, 2-13 boutons
+- Max boutons observé : ~13
 
-### Contraintes
-- **Taille de l'input** : 
-- **Valeurs maximales** : 
-- **Complexité requise** : 
+**Insight clé :** Toggle est une opération XOR !
+- `toggle(toggle(x)) = x`
+- Chaque bouton n'a que 2 états utiles : pressé 0 ou 1 fois (mod 2)
+- C'est un système d'équations linéaires sur **GF(2)** !
 
-### Observations Initiales
-<!-- Que remarque-t-on en lisant l'énoncé ? Patterns, propriétés, etc. -->
+## Approches Considérées
 
----
+### Approche 1 : Brute Force 2^k
 
-## 🔬 Approches Considérées
+- **Complexité** : O(2^k * k) par machine, où k = nombre de boutons
+- **Description** : Énumérer toutes les 2^k combinaisons de boutons
+- **Avantages** : Simple, garantit l'optimal
+- **Inconvénients** : Exponentiel en k (mais k ≤ 13 → 8192 max)
 
-### Approche 1 : Brute Force
-- **Complexité** : O(?)
-- **Description** : 
-- **Avantages** : Simple à implémenter
-- **Inconvénients** : Trop lent pour l'input réel
-- **Verdict** : ❌ Rejeté
+### Approche 2 : Meet-in-the-Middle
 
-### Approche 2 : [Nom de l'approche]
-- **Complexité** : O(?)
-- **Description** : 
-- **Insight mathématique** : 
-- **Avantages** : 
-- **Inconvénients** : 
-- **Verdict** : ✅ Sélectionné
+- **Complexité** : O(2^(k/2) * k) par machine
+- **Description** : Diviser les boutons en 2 groupes, précalculer les XOR possibles, chercher les compléments
+- **Avantages** : Racine carrée du brute force
+- **Inconvénients** : Plus complexe, overhead de hashmap
 
-### Approche 3 : [Alternative]
-- **Complexité** : O(?)
-- **Description** : 
-- **Verdict** : 🔄 Gardé en réserve
+### Approche 3 : Gaussian Elimination + Search
 
----
+- **Complexité** : O(n³) pour la réduction + recherche
+- **Description** : Réduire la matrice en forme échelonnée, identifier les variables libres, énumérer
+- **Avantages** : Plus efficace si beaucoup de boutons redondants
+- **Inconvénients** : Complexité d'implémentation
 
-## 💡 Solution Choisie
+## Solution Choisie
 
-### Algorithme
-<!-- Description détaillée de l'algorithme choisi -->
+**Approche 1 (Brute Force)** pour la simplicité et la garantie d'optimalité.
+- Avec k ≤ 13 boutons max, 2^13 = 8192 itérations par machine
+- 200 machines * 8192 = ~1.6M opérations total
+- Les opérations sont des XOR simples sur des bitmasks
 
+**Optimisations :**
+1. Représenter chaque bouton comme un bitmask (uint16_t suffit pour n ≤ 16)
+2. Le target est aussi un bitmask
+3. Utiliser popcount pour compter les bits (nombre de boutons pressés)
+4. Parcourir par Gray Code pour minimiser les XOR (1 bit flip par itération)
+
+## Détails Techniques
+
+### Représentation Bitmask
 ```
-Pseudo-code ou description étape par étape
-```
-
-### Optimisations Appliquées
-
-#### 1. [Nom de l'optimisation]
-<!-- Pourquoi et comment -->
-
-#### 2. [Autre optimisation]
-<!-- Pourquoi et comment -->
-
-### Considérations Mathématiques
-<!-- Formules utilisées, propriétés exploitées -->
-
----
-
-## 📊 Implémentation
-
-### TypeScript
-
-```typescript
-// Points clés de l'implémentation
+Lumières:  [.##.] → target = 0b0110 = 6
+Bouton (1,3): toggle bits 1 et 3 → mask = 0b1010 = 10
 ```
 
-**Choix techniques :**
-- Utilisation de Map vs Object : 
-- Typed Arrays : 
-- Autres : 
+### Gray Code Optimization
+Au lieu de parcourir 0→2^k-1 linéairement, utiliser le Gray code :
+- `gray(i) = i ^ (i >> 1)`
+- Entre gray(i) et gray(i+1), un seul bit change
+- On peut maintenir le XOR courant en O(1) au lieu de recalculer
 
-### C
+### Early Exit
+Si on trouve une solution avec 1 bouton, on peut s'arrêter (optimal).
 
-```c
-// Points clés de l'implémentation
-```
+## Résultats
 
-**Choix techniques :**
-- SIMD utilisé : Oui/Non
-- Branchless : Oui/Non
-- Parsing manuel : Oui/Non
-- Autres : 
+### Part 1 - XOR/Toggle (GF(2))
 
----
+| Version | Langage | Temps | Notes |
+|---------|---------|-------|-------|
+| Gray code + early exit | TS | ~2.8ms | popcount manuel |
+| Gray code + early exit | C | ~100µs | __builtin_popcount, __builtin_ctz |
 
-## 📈 Benchmarks
+### Part 2 - Integer Linear Programming
 
-### Résultats
+| Version | Langage | Temps | Notes |
+|---------|---------|-------|-------|
+| Gauss + DFS search | TS | ~15ms | Rational arithmetic, dynamic bounds |
+| Gauss + DFS search | C | ~1.1ms | Double precision, pruning |
 
-| Version | Langage | Temps Moyen | Min | Max | Notes |
-|---------|---------|-------------|-----|-----|-------|
-| v1 | TS | | | | Implémentation initiale |
-| v2 | TS | | | | Après optimisation X |
-| v1 | C | | | | Port initial |
-| v2 | C | | | | Avec SIMD |
+## Leçons Apprises
 
-### Comparaison avec les autres agents
+- **Part 1** : Les problèmes de toggle/XOR se mappent sur l'algèbre linéaire GF(2)
+- Gray code permet O(1) XOR update par itération
+- Early exit sur 1, 2, 3 pressions accélère énormément (cas communs)
 
-| Agent | TS | C | Rang |
-|-------|-----|---|------|
-| Claude | | | |
-| Codex | | | |
-| Gemini | | | |
-
----
-
-## 🎓 Leçons Apprises
-
-### Ce qui a bien fonctionné
-- 
-
-### Ce qui aurait pu être mieux
-- 
-
-### Techniques à retenir
-- 
-
-### Erreurs évitées pour la prochaine fois
-- 
-
----
-
-## 📚 Ressources Utilisées
-
-- 
-
----
-
-## 🔗 Fichiers
-
-- Solution Part 1 TS : `ts/day10/part1.ts`
-- Solution Part 2 TS : `ts/day10/part2.ts`
-- Solution Part 1 C : `c/day10/part1.c`
-- Solution Part 2 C : `c/day10/part2.c`
+- **Part 2** : C'est un problème d'ILP (Integer Linear Programming)
+- Gaussian elimination donne la structure de la solution
+- Les variables libres doivent être énumérées avec soin
+- Les coefficients fractionnaires dans RREF imposent des contraintes d'intégralité
+- Le calcul des bornes dynamiques avec pruning est crucial pour la performance
