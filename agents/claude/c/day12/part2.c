@@ -6,13 +6,14 @@
 
 #include "../../tools/runner/c/common.h"
 
-int main(void) {
-    char* input = aoc_read_input();
+int main(void)
+{
+    char *input = aoc_read_input();
 
     AOC_TIMER_START(parse);
     // Parse input
     int line_count = 0;
-    char** lines = aoc_split_lines(input, &line_count);
+    char **lines = aoc_split_lines(input, &line_count);
     AOC_TIMER_END(parse);
 
     AOC_TIMER_START(solve);
@@ -24,5 +25,5 @@ int main(void) {
 
     free(lines);
     aoc_cleanup(input);
-    return 0;
+    return 1;
 }

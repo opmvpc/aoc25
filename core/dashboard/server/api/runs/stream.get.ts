@@ -45,6 +45,9 @@ const NOT_IMPLEMENTED_MARKERS = [
   'return "NOT_IMPLEMENTED"',
 ];
 
+// Day 12 Part 2 is always a free star in AoC (given for completing all other puzzles)
+const FREE_STAR_ANSWER = "Merry Christmas!";
+
 async function isFileImplemented(filePath: string): Promise<boolean> {
   if (!existsSync(filePath)) return false;
   try {
@@ -196,6 +199,15 @@ export default defineEventHandler(async (event) => {
   for (const day of days) {
     for (const agent of agents) {
       for (const part of parts) {
+        // Day 12 Part 2 is a free star - always include it
+        if (day === 12 && part === 2) {
+          // Add for both languages to show in dashboard
+          for (const language of languages) {
+            runsToExecute.push({ agent, day, part, language });
+          }
+          continue;
+        }
+
         for (const language of languages) {
           const dayStr = day.toString().padStart(2, "0");
           const ext = language === "ts" ? "ts" : "c";
@@ -242,7 +254,36 @@ export default defineEventHandler(async (event) => {
 
     let result: RunResult;
 
-    if (!existsSync(agentDir)) {
+    // Day 12 Part 2 is a free star - no code execution needed
+    if (config.day === 12 && config.part === 2) {
+      result = {
+        agent: config.agent,
+        day: config.day,
+        part: config.part,
+        language: config.language,
+        answer: FREE_STAR_ANSWER,
+        timeMs: 0,
+        isCorrect: true, // Always correct - it's a free star!
+      };
+
+      // Store in DB
+      db.prepare(
+        `
+        INSERT INTO runs (agent, day, part, language, answer, time_ms, is_correct, is_sample, error)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `
+      ).run(
+        config.agent,
+        config.day,
+        config.part,
+        config.language,
+        result.answer,
+        result.timeMs,
+        1, // is_correct = true
+        useSample ? 1 : 0,
+        null
+      );
+    } else if (!existsSync(agentDir)) {
       result = {
         agent: config.agent,
         day: config.day,

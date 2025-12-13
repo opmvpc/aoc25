@@ -56,6 +56,13 @@ export default defineEventHandler(async () => {
       for (const part of parts) {
         for (const lang of languages) {
           const key = `${agent}-${day}-${part}-${lang}`;
+
+          // Day 12 Part 2 is a free star - always "implemented"
+          if (day === 12 && part === 2) {
+            implemented[key] = true;
+            continue;
+          }
+
           const dayStr = day.toString().padStart(2, "0");
           const ext = lang === "ts" ? "ts" : "c";
           const filePath = join(

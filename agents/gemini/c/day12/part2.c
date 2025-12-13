@@ -24,5 +24,5 @@ int main(void) {
 
     free(lines);
     aoc_cleanup(input);
-    return 0;
+    return 1;
 }
